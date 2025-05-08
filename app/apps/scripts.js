@@ -1,12 +1,13 @@
 // scripts.js (完整版 - 整合 Firebase Authentication)
 
 // --- 全局變量 ---
-const version = 'v1.2.0_fb_auth'; // 版本號更新
+const version = 'v1.2.1_fb_auth'; // 版本號更新
 // REMOVED: var current_account = ''; // 不再需要，由 Firebase Auth 管理
 const initialLoad = 15;   // 初始載入記錄數量
 let currentPage = 1;      // 當前頁碼 (用於記錄列表)
 let isLoading = false;    // 是否正在載入 (用於記錄列表)
 let hasMore = true;       // 是否還有更多數據 (用於記錄列表)
+let isLogin = false;      // 是否登入 (用於記錄列表)
 
 // ---> Firebase 初始化 <---
 // TODO: 將以下 firebaseConfig 的值換成你自己的 Firebase 專案設定!
@@ -23,8 +24,6 @@ const firebaseConfig = {
 // 初始化 Firebase (使用 v9 compat 語法)
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth(); // 獲取 Auth 服務的引用
-// console.log("Firebase Initialized");
-// <--------------------->
 
 // --- API Base URL ---
 const API_BASE_URL = 'http://127.0.0.1:8080/api'; // 確認 URL 正確
@@ -36,7 +35,7 @@ const postsContainer = document.getElementById('postsContainer');
 const postForm = document.getElementById('postForm');
 const postModal = document.getElementById('postModal');
 const closePostFormBtn = document.getElementById('closePostFormBtn');
-const loginModal = document.getElementById('loginModal');
+const loginModalElement = document.getElementById('loginModalBs'); // 使用新的ID
 const loginForm = document.getElementById('loginFormActual'); // ID 已修改
 const loginError = document.getElementById('loginError');
 const registerModal = document.getElementById('registerModal');
@@ -47,6 +46,7 @@ const showLoginLink = document.getElementById('showLoginLink');
 const closeRegisterBtn = document.getElementById('closeRegisterBtn');
 const userDependentElements = document.querySelectorAll('.user-dependent'); // 標記需登入元素
 const guestDependentElements = document.querySelectorAll('.guest-dependent'); // 標記訪客元素
+const registerModalElement = document.getElementById('registerModalBs');
 
 const domCache = {
     pageTitle: document.getElementById('pageTitle'),
@@ -76,6 +76,104 @@ const domCache = {
 let assetChart = null;
 let expenseChart = null;
 let currentUser = null; // 當前登入的使用者物件 (Firebase Auth)
+
+let loginModalInstance = null;
+let registerModalInstance = null;
+
+// --- 頁面加載後執行設定 ---
+document.addEventListener('DOMContentLoaded', () => {
+    
+    setupLoginAndRegisterModals(); // 設定註冊相關的互動
+
+    // 初始狀態下顯示登入框 (或根據需要調整)
+    if (loginModalElement) {
+        loginModalInstance = new bootstrap.Modal(loginModalElement);
+    }
+
+    if (registerModalElement) {
+        registerModalInstance = new bootstrap.Modal(registerModalElement);
+    
+        // 可選：監聽 Bootstrap Modal 的隱藏事件，以清除錯誤訊息
+        registerModalElement.addEventListener('hidden.bs.modal', function () {
+            const registerError = document.getElementById('registerError');
+            if (registerError) {
+                registerError.style.display = 'none';
+                registerError.textContent = '註冊失敗，請稍後再試。'; // 重置為預設錯誤訊息
+            }
+            // 重置表單內容，如果 Bootstrap 的 data-bs-dismiss 沒有完全清空的話
+            const registerForm = document.getElementById('registerForm');
+            if (registerForm) {
+                registerForm.reset();
+            }
+        });
+    }
+
+    // 綁定註冊表單提交事件
+    if (registerForm) {
+        registerForm.removeEventListener('submit', handleRegisterSubmit); // 先移除避免重複
+        registerForm.addEventListener('submit', handleRegisterSubmit);
+        // console.log("Register form submit listener attached.");
+    } else {
+        console.error("Register form (#registerForm) not found!");
+    }
+
+    // 綁定登入表單提交事件
+    if (loginForm) {
+        loginForm.removeEventListener('submit', handleLoginSubmit); // 先移除舊的
+        loginForm.addEventListener('submit', handleLoginSubmit);   // 再添加新的
+        // console.log("Login form submit listener attached.");
+    } else {
+        console.error("Login form (#loginFormActual) not found!");
+    }
+
+    const saveRecordChangesBtn = document.getElementById('saveRecordChangesBtn');
+    if (saveRecordChangesBtn) {
+        saveRecordChangesBtn.removeEventListener('click', handleUpdateRecordSubmit); // 移除舊的
+        saveRecordChangesBtn.addEventListener('click', handleUpdateRecordSubmit);   // 添加新的
+        // console.log("Listener attached to saveRecordChangesBtn.");
+    } else {
+        console.warn("saveRecordChangesBtn not found during listener setup.");
+
+    }
+
+    const saveAssetChangesBtn = document.getElementById('saveAssetChangesBtn');
+    if (saveAssetChangesBtn) {
+        saveAssetChangesBtn.removeEventListener('click', handleUpdateAssetSubmit); // 移除舊的
+        saveAssetChangesBtn.addEventListener('click', handleUpdateAssetSubmit);   // 添加新的
+        // console.log("Listener attached to saveAssetChangesBtn.");
+    } else {
+        console.warn("saveAssetChangesBtn not found during listener setup.");
+    }
+
+});
+
+auth.onAuthStateChanged(user => {
+    console.log("Auth State Changed:", user ? `User logged in: ${user.uid}` : "User logged out");
+    if (user) {
+        // --- 使用者已登入 (signInWithEmailAndPassword 成功後會觸發這裡) ---
+        user.getIdToken().then(idToken => {
+            // console.log("Obtained ID Token:", idToken);
+        }).catch(error => {
+            console.error("獲取 ID Token 失敗:", error);
+            handleLogout();
+        });
+
+
+        updateUIAfterLogin(user);               // 更新 UI 顯示已登入
+        initializeApp(user);                    // <--- 初始化應用程式
+        hideRegisterModalBs();             // 隱藏註冊 Modal
+        hideLoginModalBs();
+
+    } else {
+        // --- 使用者未登入或已登出 ---
+        updateUIAfterLogout(); // 更新 UI 顯示未登入
+        setupLoginAndRegisterModals(); // 設定互動
+        showLoginModalBs();
+        console.log("User is logged out, showing login modal."); // <--- 加入 log 確認
+
+        
+    }
+});
 
 
 // --- API 呼叫輔助函數 (包含 Firebase Auth Token) ---
@@ -183,12 +281,12 @@ async function handleRegisterSubmit(event) {
         // 1. Firebase Auth 註冊
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
-        console.log('Firebase Auth 註冊成功, UID:', user.uid);
+        // console.log('Firebase Auth 註冊成功, UID:', user.uid);
 
         // 2. 獲取 ID Token
         const idToken = await user.getIdToken();
-        console.log('Obtained Firebase ID Token.');
-
+        // console.log('Obtained Firebase ID Token.');
+        
         // 3. 呼叫後端 API 建立 Profile
         console.log(`Calling backend API to create profile for username: ${username}`);
         const profileResponse = await fetch(`${API_BASE_URL}/createUserProfile`, {
@@ -207,10 +305,10 @@ async function handleRegisterSubmit(event) {
             throw new Error(profileData.error || '無法在伺服器建立使用者資料。');
         }
 
-        console.log('後端 Firestore Profile 建立成功:', profileData);
+        // console.log('後端 Firestore Profile 建立成功:', profileData);
         alert('註冊成功！請重新整理頁面或進行登入。'); // 提示用戶
-        registerModal.style.display = 'none'; // 關閉註冊框
-        loginModal.style.display = 'flex';    // 顯示登入框
+        hideRegisterModalBs(); // <--- 使用這個來關閉
+        showLoginModalBs(); // <--- 如果要接著顯示登入框
         registerForm.reset(); // 清空表單
 
     } catch (error) {
@@ -266,6 +364,8 @@ async function handleLoginSubmit(event) {
         const userCredential = await auth.signInWithEmailAndPassword(email, password);
         // --- 登入成功 ---
         console.log('Firebase 登入成功:', userCredential.user.uid);
+        
+        hideLoginModalBs(); // 隱藏登入 Modal (Bootstrap)
 
         // **登入成功後，不需要在這裡做太多事**
         // 核心的 UI 更新和應用程式初始化將由 onAuthStateChanged 監聽器處理
@@ -309,95 +409,180 @@ async function handleLoginSubmit(event) {
 }
 
 function updateUIAfterLogout() {
-    // console.log("Updating UI elements to logged-out state...");
+    console.log("正在更新 UI 至登出狀態並清除使用者數據...");
 
-    // 1. 顯示/隱藏元素 (依賴 HTML Class)
-    const guestDependentElements = document.querySelectorAll('.guest-dependent');
-    const userDependentElements = document.querySelectorAll('.user-dependent');
-    guestDependentElements.forEach(el => { el.style.display = ''; });
-    userDependentElements.forEach(el => { el.style.display = 'none'; });
+    // // 1. 切換 .user-dependent 和 .guest-dependent 元素的顯示狀態
+    // const guestDependentElements = document.querySelectorAll('.guest-dependent');
+    // const userDependentElements = document.querySelectorAll('.user-dependent');
 
-    // // 2. 重設 Header
-    document.getElementById('logoutButton')?.remove();
-    document.getElementById('currentUserDisplay')?.remove();
-    // // 可以選擇性地在 header 加入一個固定的 "請登入" 提示 span，並用 guest-dependent class 控制
-    const headerContainer = document.querySelector('.header-container');
-     if (headerContainer && !document.getElementById('loginPromptHeader')) {
-         // 確保在 header 中顯示 "請登入" 或類似提示 (如果HTML裡沒有固定的話)
-         const loginPrompt = document.createElement('span');
-         loginPrompt.id = 'loginPromptHeader';
-         loginPrompt.className = 'header-username guest-dependent'; // 確保有 guest-dependent
-         loginPrompt.textContent = '請登入';
-         headerContainer.appendChild(loginPrompt);
-     }
+    // guestDependentElements.forEach(el => {
+    //     // 根據元素類型決定 display 樣式，或使用更通用的方式移除 'd-none' class (如果 Bootstrap 被用來控制顯示)
+    //     if (el.classList.contains('header-content') || el.classList.contains('assets-container')) {
+    //         el.style.display = 'flex'; // 假設這些容器使用 flex
+    //     } else {
+    //         el.style.display = 'block'; // 預設為 block
+    //     }
+    //     // 如果您使用 Bootstrap 的 .d-none class 來隱藏，則：
+    //     // el.classList.remove('d-none');
+    // });
+    // userDependentElements.forEach(el => {
+    //     el.style.display = 'none';
+    //     // 或者 el.classList.add('d-none');
+    // });
+
+    // // 2. 重設 Header 區域
+    // const headerLoggedIn = document.getElementById('headerLoggedIn');
+    // if (headerLoggedIn) headerLoggedIn.style.display = 'none';
+
+    // const pageTitle = document.getElementById('pageTitle');
+    // if (pageTitle) pageTitle.textContent = "Gochy 錢包"; // 或您的應用程式名稱
+
+    // const ledgerSwitcherDropdown = document.getElementById('ledgerSwitcherDropdown');
+    // if (ledgerSwitcherDropdown) {
+    //     ledgerSwitcherDropdown.style.display = 'none'; // 隱藏帳本切換器
+    //     // 重設帳本按鈕顯示
+    //     updateLedgerButtonDisplay('我的主帳本', 'personal'); // 重設為預設
+    // }
+    // const currentUserDisplayInHeader = document.getElementById('currentUserDisplay'); // 如果您還在使用舊的用戶名顯示span
+    // if(currentUserDisplayInHeader) currentUserDisplayInHeader.textContent = '請先登入';
 
 
-    // 3. 重設導航欄 Active 狀態
-    domCache.navButtons?.forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.getAttribute('href') === '#homePage') {
-            btn.classList.add('active');
-        }
-    });
+    // // 3. 清除各頁面的動態內容
 
-    // console.log("UI updated to logged-out state.");
+    // // --- 首頁 (#homePage) ---
+    // const totalAssetsValue = document.querySelector('#totalAssets .value');
+    // if (totalAssetsValue) totalAssetsValue.textContent = '請登入查看';
+    // const dailyExpensesContainer = document.getElementById('dailyExpensesContainer');
+    // if (dailyExpensesContainer) dailyExpensesContainer.innerHTML = '<p class="no-account-message text-secondary small">登出狀態，無當日收支</p>';
+    // const aiMessages = document.getElementById('aiMessages');
+    // if (aiMessages) aiMessages.innerHTML = '<p class="message-placeholder text-secondary small">請登入以獲取 AI 建議</p>';
+
+    // // 銷毀並清理首頁圖表
+    // if (typeof assetChart !== 'undefined' && assetChart) { assetChart.destroy(); assetChart = null; }
+    // const assetChartCanvas = document.getElementById('assetChart');
+    // if (assetChartCanvas) {
+    //     const assetCtx = assetChartCanvas.getContext('2d');
+    //     assetCtx.clearRect(0, 0, assetChartCanvas.width, assetChartCanvas.height);
+    //     // 可選：在 canvas 上顯示提示
+    //     // assetCtx.textAlign = 'center'; assetCtx.fillStyle = 'grey';
+    //     // assetCtx.fillText('請登入查看資產分佈', assetChartCanvas.width / 2, assetChartCanvas.height / 2);
+    // }
+
+    // if (typeof expenseChart !== 'undefined' && expenseChart) { expenseChart.destroy(); expenseChart = null; } // 首頁的開銷圖表
+    // const homeExpenseChartCanvas = document.getElementById('expenseChart'); // ID 為 'expenseChart' 的那個
+    // if (homeExpenseChartCanvas) {
+    //     const homeExpenseCtx = homeExpenseChartCanvas.getContext('2d');
+    //     homeExpenseCtx.clearRect(0, 0, homeExpenseChartCanvas.width, homeExpenseChartCanvas.height);
+    // }
+
+    // // --- 管理頁面 (#managePage) ---
+    // // 清理帳本明細視圖 (#ledgerListView)
+    // const expenseListContainer = document.getElementById('expenseListContainer');
+    // if (expenseListContainer) expenseListContainer.innerHTML = '<p class="no-account-message text-secondary small">請登入查看開銷明細</p>';
+    // const loadingIndicator = document.getElementById('loading');
+    // if (loadingIndicator) loadingIndicator.style.display = 'none';
+
+    // // 清理開銷追蹤視圖 (#ledgerExpenseTrackerView)
+    // const summaryCardForLedger = document.getElementById('summaryCard'); // 帳本摘要
+    // if (summaryCardForLedger) summaryCardForLedger.style.display = 'none'; // 或清空內容
+    // const totalExpenseEl = document.getElementById('totalExpense');
+    // if (totalExpenseEl) totalExpenseEl.textContent = 'NT$ 0';
+    // const averageDailyExpenseEl = document.getElementById('averageDailyExpense');
+    // if (averageDailyExpenseEl) averageDailyExpenseEl.textContent = 'NT$ 0';
+    // const transactionCountEl = document.getElementById('transactionCount');
+    // if (transactionCountEl) transactionCountEl.textContent = '0';
+    // const categoryTableBody = document.getElementById('categoryTableBody');
+    // if (categoryTableBody) categoryTableBody.innerHTML = '<tr><td colspan="3" class="no-data text-secondary small">請登入查看</td></tr>';
+
+    // // 銷毀管理頁面的圖表 (使用 domCache 中的引用)
+    // if (domCache.expenseCategoryChart) { domCache.expenseCategoryChart.destroy(); domCache.expenseCategoryChart = null; }
+    // const manageExpenseCatChartCanvas = document.querySelector('#ledgerExpenseTrackerView canvas#expenseCategoryChart');
+    // if (manageExpenseCatChartCanvas) {
+    //     const ctx = manageExpenseCatChartCanvas.getContext('2d');
+    //     ctx.clearRect(0, 0, manageExpenseCatChartCanvas.width, manageExpenseCatChartCanvas.height);
+    // }
+    // if (domCache.expenseTrendsChart) { domCache.expenseTrendsChart.destroy(); domCache.expenseTrendsChart = null; }
+    // const manageExpenseTrendChartCanvas = document.querySelector('#ledgerExpenseTrackerView canvas#expenseTrendsChart');
+    // if (manageExpenseTrendChartCanvas) {
+    //     const ctx = manageExpenseTrendChartCanvas.getContext('2d');
+    //     ctx.clearRect(0, 0, manageExpenseTrendChartCanvas.width, manageExpenseTrendChartCanvas.height);
+    // }
+
+    // // 清理資產/持股視圖 (#stocksSection)
+    // const stocksCardsArea = document.querySelector('#stocksDataView .stock-cards-area');
+    // if (stocksCardsArea) stocksCardsArea.innerHTML = '<p class="no-account-message text-secondary small">請登入查看證券資料</p>';
+    // const assetsDataViewContainer = document.getElementById('assetsDataView');
+    // if (assetsDataViewContainer) assetsDataViewContainer.innerHTML = '<p class="no-account-message text-secondary small">請登入查看資產資料</p>';
+    // const controlBarSummary = document.getElementById('controlBarSummary');
+    // if (controlBarSummary) controlBarSummary.textContent = '總金額: -';
+
+
+    // // --- 發現頁面 (#sharePage) ---
+    // const postsContainer = document.getElementById('postsContainer');
+    // if (postsContainer) postsContainer.innerHTML = '<p class="no-account-message text-secondary small">請登入以瀏覽或發布貼文</p>';
+    // const loadingPostsMsg = document.getElementById('loadingPosts');
+    // if(loadingPostsMsg) loadingPostsMsg.style.display = 'none';
+
+    // // --- 紀錄頁面 (#chargePage) ---
+    // const accountForm = document.getElementById('accountForm');
+    // if (accountForm) accountForm.reset();
+    // const assetForm = document.getElementById('assetForm');
+    // if (assetForm) assetForm.reset();
+    // initDate(); // 重設日期欄位為今天 (假設 initDate 函數存在且做此操作)
+    // showOrHideMemberDropdown(false); // 隱藏共享帳本的成員下拉（如果它在紀錄頁面）
+
+
+    // // 4. 重設導航欄 Active 狀態
+    // if (domCache.navButtons && domCache.navButtons.length > 0) {
+    //     domCache.navButtons.forEach(btn => {
+    //         btn.classList.remove('active');
+    //         if (btn.getAttribute('href') === '#homePage') {
+    //             btn.classList.add('active'); // 預設首頁為活動狀態
+    //         }
+    //     });
+    // } else { // 如果 domCache.navButtons 未初始化，手動查詢
+    //     document.querySelectorAll('.nav-button').forEach(btn => {
+    //         btn.classList.remove('active');
+    //         if (btn.getAttribute('href') === '#homePage') {
+    //             btn.classList.add('active');
+    //         }
+    //     });
+    // }
+    
+    // // 5. 重設瀏覽器標題
+    // document.title = 'Gochy | SmartFin'; // 或您的應用程式預設標題
+
+    const assetsContainer = domCache.assetsContainer || document.getElementById('assetsContainer'); // 獲取主容器
+    assetsContainer.innerHTML = '<p class="no-account-message">請先登入以查看錢包資訊</p>';
+
+    console.log("使用者介面已清除並重設為登出狀態。");
 }
-
 // --- 設定 Modal 切換邏輯 ---
 function setupLoginAndRegisterModals() {
     console.log("Setting up login/register modals for registration...");
 
-    // 綁定登入表單提交事件
-    if (loginForm) {
-        loginForm.removeEventListener('submit', handleLoginSubmit); // 先移除舊的
-        loginForm.addEventListener('submit', handleLoginSubmit);   // 再添加新的
-        // console.log("Login form submit listener attached.");
-    } else {
-        console.error("Login form (#loginFormActual) not found!");
-    }
-
-    // 綁定註冊表單提交事件
-    if (registerForm) {
-        registerForm.removeEventListener('submit', handleRegisterSubmit); // 先移除避免重複
-        registerForm.addEventListener('submit', handleRegisterSubmit);
-        // console.log("Register form submit listener attached.");
-    } else {
-        console.error("Register form (#registerForm) not found!");
-    }
-
-    // 從註冊框 -> 登入框
-    if (showLoginLink) {
-        showLoginLink.onclick = (e) => {
+    const showRegisterLinkFromLogin = document.getElementById('showRegisterLinkModal'); // 假設這是登入框裡的"註冊"連結
+    if (showRegisterLinkFromLogin) {
+        showRegisterLinkFromLogin.addEventListener('click', function(e) {
             e.preventDefault();
-            if(registerModal) registerModal.style.display = 'none';
-            if(loginModal) loginModal.style.display = 'flex';
-            if(registerError) registerError.style.display = 'none';
-        };
-    } else {
-         console.warn("showLoginLink not found.");
+            hideLoginModalBs(); // 假設您有 hideLoginModalBs()
+            showRegisterModalBs();
+            const loginError = document.getElementById('loginError');
+            if (loginError) loginError.style.display = 'none';
+        });
     }
 
-    // 關閉註冊框按鈕
-     if (closeRegisterBtn) {
-         closeRegisterBtn.onclick = () => {
-             if(registerModal) registerModal.style.display = 'none';
-             if(registerError) registerError.style.display = 'none';
-         };
-    } else {
-         console.warn("closeRegisterBtn not found.");
+    const showLoginLinkFromRegister = document.getElementById('showLoginLinkModal'); // 假設這是註冊框裡的"登入"連結
+    if (showLoginLinkFromRegister) {
+        showLoginLinkFromRegister.addEventListener('click', function(e) {
+            e.preventDefault();
+            hideRegisterModalBs();
+            showLoginModalBs(); // 假設您有 showLoginModalBs()
+            const registerError = document.getElementById('registerError');
+            if (registerError) registerError.style.display = 'none';
+        });
     }
-
-    // 從登入框 -> 註冊框
-     if (showRegisterLink) {
-         showRegisterLink.onclick = (e) => {
-             e.preventDefault();
-             if(loginModal) loginModal.style.display = 'none';
-             if(registerModal) registerModal.style.display = 'flex';
-             if(loginError) loginError.style.display = 'none';
-         };
-     } else {
-          console.warn("showRegisterLink not found.");
-     }
+    
 }
 
 /**
@@ -459,6 +644,7 @@ function populateDropdown(selectElementId, optionsArray, defaultOptionText) {
 let assetCategories = [];
 fixed_assets_opt = []
 transactionType_opt = []
+
 async function loadAndPopulateOptions() {
     // console.log("正在從後端獲取下拉選單選項...");
     try {
@@ -479,8 +665,8 @@ async function loadAndPopulateOptions() {
         } else {
             console.warn("後端回應中未找到有效的 'transactionsType.transactions' 數據。");
             // 保留 HTML 中的預設選項或顯示錯誤提示
-             populateDropdown('category', [], '無法載入類別'); // 清空並顯示錯誤提示
-             populateDropdown('editRecordCategory', [], '無法載入類別');
+            populateDropdown('category', [], '無法載入類別'); // 清空並顯示錯誤提示
+            populateDropdown('editRecordCategory', [], '無法載入類別');
         }
 
         
@@ -586,6 +772,35 @@ function handleScroll() {
     const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 150;
 }
 
+// 顯示 Modal
+function showLoginModalBs() {
+    if (loginModalInstance) {
+        loginModalInstance.show();
+    }
+}
+
+// 隱藏 Modal
+function hideLoginModalBs() {
+    if (loginModalInstance) {
+        loginModalInstance.hide();
+    }
+}
+
+function showRegisterModalBs() {
+    if (registerModalInstance) {
+        registerModalInstance.show();
+    } else {
+        console.error("RegisterModalBs instance not found. Was it initialized?");
+    }
+}
+
+function hideRegisterModalBs() {
+    if (registerModalInstance) {
+        registerModalInstance.hide();
+    } else {
+        console.error("RegisterModalBs instance not found.");
+    }
+}
 
 /**
  * 初始化應用程式的核心功能 (在確認使用者登入後執行)。
@@ -597,12 +812,12 @@ async function initializeApp(user) { // 將 initializeApp 改為 async
         return;
     }
     console.log(`Initializing app for user: ${user.uid}`);
-
     // --- 1. 並行執行不互相依賴的初始化 ---
     const initPromises = [
         initDate(), // 初始化日期欄位
         // 在initializeApp開始時就去獲取選項數據
-        loadAndPopulateOptions() // <--- 在這裡呼叫載入並填充選項的函數
+        loadAndPopulateOptions(), // <--- 在這裡呼叫載入並填充選項的函數
+        loadUserLedgers()
     ];
 
     // --- 2. 設定事件監聽器和路由 (可以非同步執行) ---
@@ -634,13 +849,13 @@ async function initializeApp(user) { // 將 initializeApp 改為 async
     try {
          await Promise.all(initPromises); // 等待 initDate 和 loadAndPopulateOptions 完成
         //  console.log("Initial data loaded and options populated.");
-         // --- 4. 最後處理初始 Hash ---
+        // --- 4. 最後處理初始 Hash ---
         //  console.log("Triggering initial hash change handler after options load...");
-         handleHashChange(user); // 確保選項填充完再處理初始頁面邏輯
+        handleHashChange(user); // 確保選項填充完再處理初始頁面邏輯
     } catch(error) {
-         console.error("Error during initialization or options loading:", error);
-         // 即使選項載入失敗，仍然嘗試處理 hash
-         handleHashChange(user);
+        console.error("Error during initialization or options loading:", error);
+        // 即使選項載入失敗，仍然嘗試處理 hash
+        handleHashChange(user);
     }
 
     // --- (新增) 綁定添加成員欄位按鈕 ---
@@ -684,70 +899,6 @@ async function initializeApp(user) { // 將 initializeApp 改為 async
     // console.log("App Initialization complete for logged in user.");
 }
 
-// --- 頁面加載後執行設定 ---
-document.addEventListener('DOMContentLoaded', () => {
-    // console.log("DOM fully loaded. Setting up registration modals.");
-    setupLoginAndRegisterModals(); // 設定註冊相關的互動
-
-    // 初始狀態下顯示登入框 (或根據需要調整)
-    if(loginModal) loginModal.style.display = 'flex';
-    if(registerModal) registerModal.style.display = 'none';
-
-    const saveRecordChangesBtn = document.getElementById('saveRecordChangesBtn');
-    if (saveRecordChangesBtn) {
-        saveRecordChangesBtn.removeEventListener('click', handleUpdateRecordSubmit); // 移除舊的
-        saveRecordChangesBtn.addEventListener('click', handleUpdateRecordSubmit);   // 添加新的
-        // console.log("Listener attached to saveRecordChangesBtn.");
-    } else {
-        console.warn("saveRecordChangesBtn not found during listener setup.");
-
-    }
-
-    const saveAssetChangesBtn = document.getElementById('saveAssetChangesBtn');
-    if (saveAssetChangesBtn) {
-        saveAssetChangesBtn.removeEventListener('click', handleUpdateAssetSubmit); // 移除舊的
-        saveAssetChangesBtn.addEventListener('click', handleUpdateAssetSubmit);   // 添加新的
-        // console.log("Listener attached to saveAssetChangesBtn.");
-    } else {
-        console.warn("saveAssetChangesBtn not found during listener setup.");
-    }
-
-});
-
-auth.onAuthStateChanged(user => {
-    console.log("Auth State Changed:", user ? `User logged in: ${user.uid}` : "User logged out");
-    if (user) {
-        // --- 使用者已登入 (signInWithEmailAndPassword 成功後會觸發這裡) ---
-        user.getIdToken().then(idToken => {
-            // console.log("Obtained ID Token:", idToken);
-        }).catch(error => {
-            console.error("獲取 ID Token 失敗:", error);
-            handleLogout();
-        });
-
-        loginModal.style.display = 'none';      // 隱藏登入框
-        registerModal.style.display = 'none';   // 隱藏註冊框
-        if(loginForm) loginForm.reset();        // 清空登入表單 (可選)
-
-        updateUIAfterLogin(user);               // 更新 UI 顯示已登入
-        initializeApp(user);                    // <--- 初始化應用程式
-
-    } else {
-        // --- 使用者未登入或已登出 ---
-        // ... (登出邏輯) ...
-        // *** 核心：顯示登入介面 ***
-        updateUIAfterLogout(); // 更新 UI 顯示未登入
-        setupLoginAndRegisterModals(); // 設定互動
-        console.log("User is logged out, showing login modal."); // <--- 加入 log 確認
-        if (loginModal) {
-            loginModal.style.display = 'flex'; // <--- 確保這裡會執行
-        } else {
-            console.error("Login Modal not found!");
-        }
-        
-    }
-});
-
 function formatNumber(number) {
     // 確保 number 是數字，如果不是或 NaN，返回 '0' 或其他預設值
     const num = Number(number);
@@ -771,9 +922,10 @@ async function handleLogout() {
     try {
         await auth.signOut(); // 使用 Firebase Auth SDK 登出
         console.log('Firebase 登出成功');
+        
         // 清理工作和 UI 更新會由 onAuthStateChanged 監聽器自動處理
         // 登出後跳轉到首頁
-        // window.location.hash = '#homePage';
+        window.location.hash = '#homePage';
     } catch (error) {
         console.error('登出失敗:', error);
         alert('登出時發生錯誤，請稍後再試。');
@@ -786,11 +938,7 @@ function updateUIAfterLogin(user) {
         return; // 如果沒有 user 物件，直接返回
     }
 
-    console.log(`Updating UI for logged-in user: ${user.uid}`);
-
     // --- 1. 根據 CSS class 顯示/隱藏元素 ---
-    // 假設你的 HTML 中，需要登入才顯示的元素有 class="user-dependent"
-    // 只給訪客看的元素有 class="guest-dependent"
     const userDependentElements = document.querySelectorAll('.user-dependent');
     const guestDependentElements = document.querySelectorAll('.guest-dependent');
 
@@ -800,20 +948,17 @@ function updateUIAfterLogin(user) {
     });
 
     // 顯示登入用戶元素 (恢復其預設顯示方式)
-    // '' 會移除內聯的 display 樣式，讓 CSS 規則生效
     userDependentElements.forEach(el => {
         el.style.display = '';
     });
 
-    loadUserLedgers();
+    // loadUserLedgers();
 
     // --- 2. 更新 Header 區域 ---
     const headerContainer = document.querySelector('.header-container');
     if (headerContainer) {
         // 決定要顯示的使用者名稱 (優先用 displayName，其次 email，最後 uid)
         const usernameToShow = user.displayName || user.email || user.uid;
-        // --- 清理舊元素 ---
-        // 移除可能存在的舊下拉選單或登入提示
         const oldDropdown = document.getElementById('accountList-title');
         if (oldDropdown) oldDropdown.remove();
         const oldLoginPrompt = document.getElementById('loginPromptHeader');
@@ -946,8 +1091,6 @@ function handleHashChange(user) {
     // --- 6. 根據登入狀態和當前 Hash 載入內容 ---
     if (user) {
         // --- 使用者已登入 ---
-        loginModal.style.display = 'none'; // 確保登入/註冊框是隱藏的
-
         console.log(`Loading content for #${hash} for logged-in user.`);
         // 根據 hash 載入對應頁面的數據或初始化功能
         switch (hash) {
@@ -958,11 +1101,11 @@ function handleHashChange(user) {
             case 'managePage':
                 // 預設顯示資產視圖 (現金/其他)，並觸發數據加載
                 // 確保 #recordsSection 和 #stocksSection 初始狀態正確
-                 if(domCache.recordsSection) domCache.recordsSection.style.display = 'none';
-                 if(domCache.stocksSection) domCache.stocksSection.style.display = 'block';
-                 // 確保選項卡樣式正確 (可選)
-                 if(domCache.showStocksCard) domCache.showStocksCard.style.backgroundColor = 'var(--secondary)'; // 或 active class
-                 if(domCache.showRecordsCard) domCache.showRecordsCard.style.backgroundColor = 'var(--background)'; // 或移除 active class
+                if(domCache.recordsSection) domCache.recordsSection.style.display = 'none';
+                if(domCache.stocksSection) domCache.stocksSection.style.display = 'block';
+                // 確保選項卡樣式正確 (可選)
+                if(domCache.showStocksCard) domCache.showStocksCard.style.backgroundColor = 'var(--secondary)'; // 或 active class
+                if(domCache.showRecordsCard) domCache.showRecordsCard.style.backgroundColor = 'var(--background)'; // 或移除 active class
                 switchDataView('assets');
                 break;
             case 'sharePage':
@@ -1007,7 +1150,6 @@ function handleHashChange(user) {
         if (protectedPages.includes(hash)) {
             console.log(`Access denied to protected page #${hash}. Clearing content.`);
             targetPage.innerHTML = '<p class="text-center p-4">請先登入以查看此頁面。</p>'; // 清空並顯示提示
-            loginModal.style.display = 'flex'; // 確保登入框可見
         } else if (hash === 'homePage') {
             // 如果是首頁，可以顯示一個簡單的訪客歡迎介面
             // 但主要目的是讓登入 Modal 顯示 (由 onAuthStateChanged 處理)
@@ -1015,7 +1157,6 @@ function handleHashChange(user) {
              if (homeContent) {
                   homeContent.innerHTML = '<div class="container text-center mt-5"><h2 class="guest-dependent">歡迎使用 Gochy 記帳網</h2><p class="guest-dependent">請登入或註冊以開始使用。</p></div>';
              }
-             loginModal.style.display = 'flex'; // 確保登入框可見
         }
         // 其他公開頁面 (如果有的話) 可以在這裡處理
     }
@@ -1161,7 +1302,7 @@ async function handleSubmitRecord() {
     if (!user) {
         // 如果使用者未登入，提示並顯示登入框
         alert('請先登入！');
-        showLoginModal(); // 顯示登入模態框
+        showLoginModalBs(); // 顯示登入模態框
         return;
     }
 
@@ -1266,7 +1407,7 @@ async function submitAccountData(event) {
     if (!user) {
         // 如果使用者未登入，提示並顯示登入框
         alert('請先登入才能記帳！');
-        showLoginModal(); // 顯示登入模態框
+        showLoginModalBs(); // 顯示登入模態框
         return;
     }
 
@@ -1388,7 +1529,7 @@ async function handlePostSubmit(event) {
     if (!user) {
         alert('請先登入才能發布貼文！');
         closePostModal(); // 關閉可能意外打開的 Modal
-        showLoginModal(); // 顯示登入框
+        showLoginModalBs(); // 顯示登入框
         return;
     }
 
@@ -2274,7 +2415,7 @@ function setupEventListeners(user) {
         console.error("setupEventListeners called without a valid user.");
         return;
     }
-    console.log(`Setting up event listeners for logged-in user: ${user.uid}`);
+    // console.log(`Setting up event listeners for logged-in user: ${user.uid}`);
 
     // --- Helper function to safely add listeners ---
     // 確保元素存在且只綁定一次
@@ -2314,7 +2455,7 @@ function setupEventListeners(user) {
         postFormElement.addEventListener('submit', handlePostSubmit);   // 添加新的
         postFormElement.removeEventListener('reset', clearImagePreview);// 移除舊的
         postFormElement.addEventListener('reset', clearImagePreview);  // 添加新的
-        console.log("Listeners added to #postForm");
+        // console.log("Listeners added to #postForm");
     }
     addSafeListener('closePostFormBtn', 'click', closePostModal);
     const postModalElement = document.getElementById('postModal');
@@ -2322,7 +2463,7 @@ function setupEventListeners(user) {
          // 移除舊的匿名函數監聽器比較困難，這裡假設只綁定一次
          // 如果擔心重複，可以在 closePostModal 內部處理背景點擊
          postModalElement.addEventListener('click', (e) => { if (e.target === postModalElement) closePostModal(); });
-         console.log("Background click listener added to #postModal");
+        //  console.log("Background click listener added to #postModal");
     }
 
     // 6. 貼文圖片上傳預覽
@@ -2334,15 +2475,10 @@ function setupEventListeners(user) {
 
     // --- 其他需要登入才能操作的靜態按鈕 ---
     // 例如：控制列中的按鈕 (如果它們的操作需要登入)
-    // addSafeListener('showAssetsBtn', 'click', () => switchDataView('assets'));
-    // addSafeListener('showStocksBtn', 'click', () => switchDataView('stocks'));
-    // addSafeListener('showDailyReportBtn', 'click', () => switchHomeView('dailyReport'));
-    // addSafeListener('showExpenseTrackerBtn', 'click', () => switchHomeView('expenseTracker'));
-    // 注意：這些按鈕的 onclick 屬性已經在 HTML 中設定了，
-    // 除非你想移除 HTML 中的 onclick 並完全用 JS 控制，否則不需要在這裡重複綁定。
+    addSafeListener('showAssetsBtn', 'click', () => switchDataView('assets'));
+    addSafeListener('showStocksBtn', 'click', () => switchDataView('stocks'));
 
-
-    console.log("Static event listeners setup complete.");
+    // console.log("Static event listeners setup complete.");
 }
 
 // 輔助函數範例 (如果之前沒提供)
@@ -2429,7 +2565,7 @@ async function renderStockCardsForAccount() {
 
     try {
         // 使用 fetchWithAuth 呼叫後端 API
-        console.log("Fetching stock data from /api/stocks...");
+        // console.log("Fetching stock data from /api/stocks...");
         const response = await fetchWithAuth(`${API_BASE_URL}/stocks`); // 不需要傳 uid，後端從 token 獲取
 
         if (!response.ok) {
@@ -2438,7 +2574,7 @@ async function renderStockCardsForAccount() {
         }
 
         const stockData = await response.json(); // 解析返回的股票數據陣列
-        console.log("Fetched stock data:", stockData);
+        // console.log("Fetched stock data:", stockData);
 
         // 使用 renderStockCards 函數渲染卡片，並獲取總金額
         // *** 確保 renderStockCards 函數已定義 ***
@@ -2523,7 +2659,7 @@ function renderStockCards(stockDatas, container) {
     });
 
     container.appendChild(fragment); // 將所有卡片一次性加入 DOM
-    console.log("Stock cards rendered. Total value:", totalValue);
+    // console.log("Stock cards rendered. Total value:", totalValue);
     return totalValue; // 返回計算出的總價值
 }
 
@@ -2539,7 +2675,7 @@ async function submitFinForm(event) {
     if (!user) {
         // 如果使用者未登入，提示並顯示登入框
         alert('請先登入才能記帳！');
-        showLoginModal(); // 顯示登入模態框
+        showLoginModalBs(); // 顯示登入模態框
         return;
     }
 
@@ -2591,7 +2727,7 @@ async function submitFinForm(event) {
          return;
     }
 
-    console.log("正在提交記帳資料:", formData);
+    // console.log("正在提交記帳資料:", formData);
 
     try {
         // 5. 使用 fetchWithAuth 呼叫受保護的後端 API
@@ -2614,7 +2750,7 @@ async function submitFinForm(event) {
         form.reset(); // 清空表單欄位
         initDate(); // 將日期欄位重設為今天
         alert('記帳成功！'); // 提示使用者成功
-        console.log("記帳資料提交成功:", result);
+        // console.log("記帳資料提交成功:", result);
 
         // 7. **可選操作：成功後刷新相關資料**
         //    (根據需要取消註解或添加刷新邏輯)
@@ -2677,7 +2813,7 @@ async function renderAssetCardsForAccount() {
 
     try {
         // 使用 fetchWithAuth 呼叫後端 API
-        console.log("Fetching non-stock asset data from /api/assets...");
+        // console.log("Fetching non-stock asset data from /api/assets...");
         const response = await fetchWithAuth(`${API_BASE_URL}/assets`); // 不需要傳 uid
 
         if (!response.ok) {
@@ -2686,7 +2822,7 @@ async function renderAssetCardsForAccount() {
         }
 
         const assetData = await response.json(); // 解析返回的資產數據陣列
-        console.log("Fetched non-stock asset data:", assetData);
+        // console.log("Fetched non-stock asset data:", assetData);
 
         // 使用 renderAssetCards 函數渲染卡片，並獲取總金額
         // *** 確保 renderAssetCards 函數已定義 ***
@@ -2850,7 +2986,7 @@ async function handleUpdateRecordSubmit() {
         const modalElement = document.getElementById('editRecordModal');
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if(modalInstance) modalInstance.hide();
-        showLoginModal();
+        showLoginModalBs();
         return;
     }
 
@@ -2896,7 +3032,7 @@ async function handleUpdateRecordSubmit() {
          return;
     }
 
-    console.log(`準備更新記錄 ID: ${recordId}，新數據:`, updatedRecordData);
+    // console.log(`準備更新記錄 ID: ${recordId}，新數據:`, updatedRecordData);
 
     try {
         // 使用 fetchWithAuth 呼叫後端 API (PUT /api/record/{record_id})
@@ -3026,7 +3162,7 @@ function displaySummary(totals) {
         return; // 找不到容器，無法顯示
     }
 
-    console.log("Displaying summary:", totals);
+    // console.log("Displaying summary:", totals);
 
     // 從傳入的物件中獲取數據，提供預設值以防萬一
     const totalIncome = totals.totalIncome || 0;
@@ -3178,7 +3314,7 @@ function setupManagePageCards() {
             // 切換到資產視圖
             console.log("Switching to assets view (defaulting to 'assets')...");
             // 預設顯示「現金/其他資產」分頁
-            switchDataView('assets'); // switchDataView 內部會呼叫 renderAssetCardsForAccount (它內部使用 fetchWithAuth)
+            // switchDataView('assets'); // switchDataView 內部會呼叫 renderAssetCardsForAccount (它內部使用 fetchWithAuth)
         }
     });
      console.log("Manage page card click listener attached to container.");
@@ -3283,33 +3419,6 @@ function setupOptionCards() {
  * @param {string} type - 資產類型的名稱。
  * @returns {string} 包含 Material Symbols class 和圖示名稱的 <span> 標籤 HTML 字串。
  */
-// function getAssetTypeIcon(type) {
-//     // 定義資產類型到 Material Symbols 圖示名稱 的映射
-//     // 你可以到 Google Fonts Icons 網站 (https://fonts.google.com/icons) 查找圖示名稱
-//     const iconNames = {
-//         '活存': 'account_balance_wallet', // 或 'savings'
-//         '定存': 'account_balance',      // 或 'savings'
-//         '現金': 'payments',             // 或 'money'
-//         '虛擬貨幣': 'currency_bitcoin',   // 比特幣
-//         '股票': 'show_chart',           // 折線圖 (代表股價) 或 ssid_chart
-//         '金融股': 'domain',              // 大樓 (代表公司/機構)
-//         'ETF': 'pie_chart',             // 圓餅圖 (代表分散投資)
-//         '美債': 'attach_money',        // 美元符號 或 account_balance
-//         '債券': 'receipt_long',         // 長收據 (代表債券)
-//         '交割款': 'sync_alt',           // 左右箭頭 (代表轉移)
-//         '信用卡': 'credit_card',        // 信用卡
-//         '借貸': 'handshake',           // 握手 (代表借貸協議)
-//         // --- 你可以根據需要添加更多資產類型和對應圖示名稱 ---
-//     };
-
-//     // 查找對應的圖示名稱，如果找不到，使用預設的 'help' (問號) 圖標
-//     const iconName = iconNames[type] || 'help'; // 預設圖標名稱
-
-//     // 返回包含 class 和圖示名稱的 <span> 標籤
-//     // 使用 'material-symbols-outlined' class 來指定使用 Outlined 樣式
-//     return `<span class="material-symbols-outlined">${iconName}</span>`;
-// }
-
 function getAssetTypeIcon(type) {
     // 查找 Bootstrap Icons 名稱：https://icons.getbootstrap.com/
     console.log(type);
@@ -3402,17 +3511,37 @@ async function updateHomePage() {
 
         // --- 成功獲取數據，重新渲染容器內容 ---
         const totalAssets = summaryData.total_asset_amount || 0;
+        const totalLiabilities = summaryData.total_liabilities_amount || 0; // << 直接從後端獲取總負債
+        const netAssets = totalAssets - totalLiabilities; // << 計算淨資產
+        
         // 後端返回的 daily expenses 列表 和 daily total cost
         const dailyExpenses = summaryData.expenses || [];
         const todayTotalExpense = summaryData.total_cost || 0;
         const assetDistribution = summaryData.asset_distribution || {};
         const expenseDistribution = summaryData.expense_distribution || {};
-
+        const liabilityDistribution = summaryData.liability_distribution || {};
+        if(liabilityDistribution){
+            const cridetCard_debit = liabilityDistribution['信用卡'] || 0; // 信用卡負債
+            const loan = liabilityDistribution['借貸'] || 0; // 貸款負債
+        }
+        
         // 重建容器內部結構 (因為之前可能被 loading 或 error message 覆蓋)
         assetsContainer.innerHTML = `
             <div class="total-assets" id="totalAssets">
                 <span class="label" style="font-size: 0.8rem; color: var(--text-secondary);">總資產</span>
-                <span class="value" style="font-size: 1.5rem; font-weight: 500;">NT$ ${formatNumber(totalAssets)}</span>
+                <span class="value" style="font-size: 1.5rem;">NT$ ${formatNumber(totalAssets)}</span>
+            </div>
+            <div class="net-assets-row">
+                <div>
+                    <span class="label">總負債</span>
+                    <span class="value liability-value">NT$ ${formatNumber(totalLiabilities)}</span>
+                </div>
+                <div>
+                    <span class="label">淨資產</span>
+                    <span class="value net-asset-value" style="color: ${netAssets >= 0 ? 'var(--success)' : 'var(--danger)'};">
+                        NT$ ${formatNumber(netAssets)}
+                    </span>
+                </div>
             </div>
             <div id="dailyExpensesContainer" class="record-card-container" style="margin-top: 10px;">
                 </div>
@@ -3440,8 +3569,6 @@ async function updateHomePage() {
         renderDailyExpenses(dailyExpenses, todayTotalExpense);
         // 確保 renderDistributionOnChart 能處理空數據
         renderDistributionOnChart('assetChart', 'assetChartContainer', assetDistribution, '總資產分佈', assetChart);
-        // console.log("Rendering asset distribution chart...");
-        // console.log(expenseDistribution);
         renderDistributionOnChart('expenseChart', 'expenseChartContainer', expenseDistribution, '當月開銷分佈', expenseChart);
 
         currentUser = summaryData.name;
@@ -3869,7 +3996,7 @@ async function handleUpdateAssetSubmit() {
         const modalElement = document.getElementById('editAssetModal');
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if(modalInstance) modalInstance.hide();
-        showLoginModal();
+        showLoginModalBs();
         return;
     }
 
@@ -4106,12 +4233,14 @@ function handleLedgerSelect(event) {
     selectedLink.classList.add('active');
 
     // --- 新增：根據新帳本類型，判斷是否需要在記帳頁面顯示成員下拉選單 ---
+    if(currentLedger.type === 'shared') {
+        populateMemberDropdown(currentLedger.id); // 更新成員下拉選單 (如果有的話)
+    }
     if (window.location.hash.includes('chargePage')) { // 只有當前在記帳頁才需要立即處理
         if (currentLedger.type === 'shared') {
-                showOrHideMemberDropdown(true);
-                populateMemberDropdown(currentLedger.id); // 載入新帳本的成員
+            showOrHideMemberDropdown(true);
         } else {
-                showOrHideMemberDropdown(false); // 個人帳本則隱藏
+            showOrHideMemberDropdown(false); // 個人帳本則隱藏
         }
     }
     // ... 觸發數據刷新 ...
@@ -4126,7 +4255,6 @@ async function loadUserLedgers() {
     
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/ledgers`); // 假設這是獲取帳本列表的 API
-        // // ...
         const ledgers = await response.json();
         populateLedgerSwitcher(ledgers || {}); // <--- 呼叫這個
         // // 更新按鈕為當前 (可能預設或上次選擇的)

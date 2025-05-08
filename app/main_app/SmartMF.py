@@ -558,6 +558,11 @@ class SmartMF:
         Returns:
             True if the profile document was created or already exists, False otherwise.
         """
+
+        # Define default personal ledger details (consistent with frontend's initial state)
+        default_personal_ledger_id = "expenses"  # Used for the subcollection name and internal reference
+        
+
         collection_path = self._get_users_collection_path()
         user_ref = self.firestore_client.get_document_reference(collection_path, uid) # 使用 uid 作為文件 ID
 
@@ -569,12 +574,16 @@ class SmartMF:
 
         # 準備要儲存到 Firestore 的基本資料 (不再儲存密碼 hash)
         profile_data = {
-            # 如果沒有提供 username，可以用 email 前綴或 uid 作為預設值
-            "username": username if username else uid,
+            "username": username if username else email.split('@')[0], # Use email prefix if username is not provided
             "email": email,
             "created_at": datetime.now().isoformat(),
-            "access": 0, # 預設權限
-            # 可以加入其他預設欄位，例如空的設定檔連結、頭像 URL 等
+            "access": 0,  # Default access level
+            "ledgers": {
+                "personal": [
+                    default_personal_ledger_id,
+                ],
+                "shared": []  # Initially, the user has no shared ledgers
+            }
         }
 
         if isinstance(user_data, dict):
@@ -583,63 +592,56 @@ class SmartMF:
         # 在 Firestore 中建立文件，使用 uid 作為 ID
         added_id = self.firestore_client.add_document(collection_path, profile_data, uid)
 
-        if added_id == uid:
-            # 為新用戶建立必要的子集合
-            try:
-                self.firestore_client.add_document(self._get_options_collection_path(uid), self.optionType, "options")
-                self.firestore_client.add_document(self._get_relation_collection_path(uid), {}, "relationship")
-                print(f"Successfully created Firestore profile for user UID '{uid}'")
-                return True
-            except Exception as e:
-                print(f"Warning: Failed to create subcollections for user {uid}: {e}")
-                # 主 profile 文件已建立，可能仍算成功
-                return True
-        else:
-            print(f"Failed to create Firestore profile for user UID '{uid}'")
+        try:
+            # Use a batch to ensure atomic operations for initial setup
+            batch = self.firestore_client.db.batch()
+
+            # 1. Set the main user profile document
+            batch.set(user_ref, profile_data)
+
+            # 2. Initialize the 'options' subcollection with default option types
+            #    Path: UserDB/<uid>/options/options
+            options_doc_ref = user_ref.collection("options").document("options")
+            batch.set(options_doc_ref, self.optionType) # self.optionType is defined in SmartMF.__init__
+
+            # 3. Initialize the 'relationship' subcollection (can be empty or have a basic structure)
+            #    Path: UserDB/<uid>/relationship/relationship
+            relationship_doc_ref = user_ref.collection("relationship").document("relationship")
+            # Example: Initialize with empty lists for friends or groups if planned for future use
+            batch.set(relationship_doc_ref, {"friends_uids": [], "group_invites": []})
+
+            # Note: The actual 'expenses' (or default_personal_ledger_id) subcollection and 'assets'
+            # subcollection will be created automatically by Firestore when the first document
+            # (first expense or first asset) is added to them.
+            # No need to create placeholder documents explicitly for these if your logic
+            # for adding expenses/assets handles collection creation gracefully.
+
+            batch.commit()
+            print(f"Successfully created Firestore profile and initial configurations for user UID '{uid}'")
+            return True
+
+        except Exception as e:
+            print(f"ERROR: Failed to create Firestore profile or initial configurations for UID '{uid}': {e}")
+            # In a production scenario, you might want to log this error more formally.
+            # Since the batch fails, no partial data should be written, maintaining consistency.
             return False
         
-    # def add_user(self, user_id: str, user_data: Optional[Dict[str, Any]] = None) -> Optional[str]:
-    #     """
-    #     Adds a new user to Firestore.
-
-
-    #     Args:
-    #         user_id: The unique ID of the user.
-    #         user_data: (Optional) A dictionary containing user data.
-
-
-    #     Returns:
-    #         The ID of the newly added user, or None if the user already exists.
-    #     """
-    #     collection_path = self._get_users_collection_path()
-    #     user_ref = self.firestore_client.get_document_reference(collection_path, user_id)
-
-
-    #     if user_ref.get().exists:
-    #         print(f"User '{user_id}' already exists, cannot add.")
-    #         self.firestore_client.add_document(self._get_options_collection_path(user_id), self.optionType, "options")
-    #         return None
-
-
-    #     if user_data is None:
-    #         user_data = {
-    #             "created_at": datetime.now().isoformat(),
-    #             "email": "",
-    #             "username": user_id,
-    #             "password": "",
-    #             "access": 0,
-    #         }
-    #     else:
-    #         if not isinstance(user_data, dict):
-    #             raise ValueError("user_data must be a dictionary")
-    #         user_data["created_at"] = datetime.now().isoformat()
-
+        # if added_id == uid:
+        #     # 為新用戶建立必要的子集合
+        #     try:
+        #         self.firestore_client.add_document(self._get_options_collection_path(uid), self.optionType, "options")
+        #         self.firestore_client.add_document(self._get_relation_collection_path(uid), {}, "relationship")
+        #         print(f"Successfully created Firestore profile for user UID '{uid}'")
+        #         return True
+        #     except Exception as e:
+        #         print(f"Warning: Failed to create subcollections for user {uid}: {e}")
+        #         # 主 profile 文件已建立，可能仍算成功
+        #         return True
+        # else:
+        #     print(f"Failed to create Firestore profile for user UID '{uid}'")
+        #     return False
         
-    #     self.firestore_client.add_document(collection_path, user_data, user_id)
-    #     self.firestore_client.add_document(self._get_options_collection_path(user_id), self.optionType, "options")
-    #     self.firestore_client.add_document(self._get_relation_collection_path(user_id), {}, "relationship")
-    #     print(f"Successfully added user '{user_id}'")
-    #     return user_id
+    
 
     def get_user_details(self, uid: str) -> Optional[Dict[str, Any]]:
          """Retrieves user details from Firestore using Firebase UID."""
@@ -985,7 +987,7 @@ class SmartMF:
                                                 ledgerType = ledgerType,
                                                 year = datetime.today().year,
                                                 month = datetime.today().month)
-        
+        total_liabilities_amount = 0
         for expense in expenseList:
             if "date" in expense and expense["date"] == date_str:
                 daily_expenses.append(expense)
@@ -993,6 +995,11 @@ class SmartMF:
                     total_cost += expense.get("amount", 0)
                 else:
                     total_income += expense.get("amount", 0)
+                
+            if expense.get("payment_method") in liabilities_types:
+                amount = expense.get("amount", 0)
+                liabilities_distribution[expense.get("payment_method")] += amount
+                total_liabilities_amount += amount
         
 
         for expense in expenseList:
@@ -1005,7 +1012,7 @@ class SmartMF:
         # Get asset data
         assetsList = self.get_all_assets(user_id=user_id)
         total_asset_amount = 0
-        total_liabilities_amount = 0
+
 
 
         for asset in assetsList:
@@ -1014,9 +1021,9 @@ class SmartMF:
             if asset_type in asset_types:
                 asset_distribution[asset_type] += current_amount
                 total_asset_amount += current_amount
-            if asset_type in liabilities_types:
-                liabilities_distribution[asset_type] += current_amount
-                total_liabilities_amount += current_amount
+            # if asset_type in liabilities_types:
+            #     liabilities_distribution[asset_type] += current_amount
+            #     total_liabilities_amount += current_amount
 
         info_ret = self.firestore_client.db.document(self._get_user_info_collection_path(user_id=user_id)).get()
         info_dict  = {}

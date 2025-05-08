@@ -565,8 +565,8 @@ footer.hidden {
 }
 
 .total-assets .value {
-    font-size: 1.4rem;
-    font-weight: 400;
+    font-size: 1.5rem;
+    font-weight: 600;
     color: var(--text-primary);
 }
 
@@ -651,12 +651,6 @@ footer.hidden {
 
     .asset-card .value {
         font-size: 0.9rem;
-    }
-
-    header.header-container {
-        min-height: 8vh;
-        padding: 6px;
-        gap: 4px;
     }
 
     footer.nav-bar {
@@ -1028,7 +1022,7 @@ footer.hidden {
 
 @media (max-width: 768px) {
     .modal-content {
-        width: 95%;
+        width: 100%;
     }
 
     .post-input {
@@ -1119,63 +1113,12 @@ footer.hidden {
     overflow-y: auto; /* 內容過長時可滾動 */
 }
 
-/* 登入模態框樣式 */
-#loginModal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center; /* 水平置中 */
-    align-items: center; /* 垂直置中 */
-    z-index: 2000;
-}
 
-/* 控制登入模態框內容區域 */
-#loginModal .login-modal-content {
-    max-width: 400px; /* 限制最大寬度 */
-    width: 90%; /* 適應行動裝置 */
-    max-height: 80vh; /* 限制最大高度 */
-    overflow-y: auto; /* 內容過長時可滾動 */
-    background: var(--card-bg);
-    border-radius: 8px;
-    padding: 16px;
-    margin: 0 auto; /* 確保水平置中 */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* 模態框頁腳連結 */
-.modal-footer-links {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 16px;
-    font-size: 0.9rem;
-}
-
-.footer-link {
-    color: var(--primary);
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-.footer-link:hover {
-    color: var(--secondary);
-    text-decoration: underline;
-}
 
 /* 行動裝置上的樣式 */
 @media (max-width: 768px) {
-    #loginModal .login-modal-content {
-        max-width: 95%;
-        max-height: 70vh;
-        padding: 12px;
-    }
 
-    .modal-footer-links {
-        font-size: 0.8rem;
-    }
+    
 }
 
 .image-preview-container {
@@ -1765,12 +1708,12 @@ footer.hidden {
 header.header-container {
     /* --- 保留你原有的樣式 --- */
     background: var(--card-bg);
-    padding: 12px 16px; /* 可以微調 padding */
+    padding: 18px 16px; /* 可以微調 padding */
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
     z-index: 1000;
-    padding-top: env(safe-area-inset-top);
+    /* padding-top: env(safe-area-inset-top); */
     transition: transform 0.3s ease;
     /* --- 修改或添加以下 Flexbox 屬性 --- */
     display: flex;             /* 確保是 Flexbox 佈局 */
@@ -1814,8 +1757,8 @@ header.header-container {
 /* 針對小螢幕的調整 (可以保留或修改) */
 @media (max-width: 768px) {
     header.header-container {
-        padding: 8px 12px; /* 調整內邊距 */
-        gap: 5px;          /* 調整間距 */
+        padding: 20px 12px; /* 調整內邊距 */
+        gap: 3px;          /* 調整間距 */
         /* flex-wrap: wrap; */ /* 確保允許換行 */
     }
     #pageTitle {
@@ -2035,3 +1978,75 @@ header.header-container {
     vertical-align: middle; /* 圖示垂直對齊 */
     margin-right: 4px;
 }
+
+/* 新增：用於顯示總負債和淨資產的行 */
+.net-assets-row {
+    display: flex; /* 使用 Flexbox 將左右兩部分並排 */
+    justify-content: space-between; /* 將左右兩部分推到兩端 */
+    align-items: center; /* 垂直居中對齊 */
+    padding: 6px 16px 10px 16px; /* 上、左右、下 內邊距 */
+    margin-top: -8px; /* 向上移動一點，靠近總資產區塊 */
+    margin-bottom: 15px; /* 與下方內容的間距 */
+    background: var(--card-bg); /* 背景色與 total-assets 保持一致 */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* 底部分隔線 */
+    font-size: 0.9rem; /* 稍小的字體 */
+    width: 100%; /* 佔滿父容器寬度 */
+    max-width: 300px; /* 與 #totalAssets 的最大寬度保持一致 */
+    margin-left: auto; /* 水平居中 */
+    margin-right: auto; /* 水平居中 */
+    box-sizing: border-box;
+    /* 確保視覺上與 total-assets 連續 */
+    border-bottom-left-radius: 8px; /* 圓角應用在底部 */
+    border-bottom-right-radius: 8px;
+}
+
+.net-assets-row > div {
+    /* 左右兩個子 div 的樣式 */
+    text-align: center; /* 文字居中 */
+    flex-basis: 48%; /* 大致各佔一半寬度，留點間隙 */
+}
+
+.net-assets-row .label {
+    display: block; /* 標籤獨佔一行 */
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 3px;
+}
+
+.net-assets-row .value {
+    font-weight: 500; /* 中等字重 */
+    font-size: 1rem; /* 金額字體大小 */
+}
+
+/* 總負債金額的特定顏色 */
+.net-assets-row .liability-value {
+    color: var(--danger); /* 使用危險/紅色 */
+}
+
+
+/* 調整 #totalAssets 的樣式，使其與下方 .net-assets-row 銜接更自然 */
+#totalAssets {
+    border-bottom: none; /* 移除自身的底部分隔線 */
+    padding-bottom: 6px; /* 減少底部內邊距 */
+    border-bottom-left-radius: 0; /* 移除底部圓角 */
+    border-bottom-right-radius: 0;
+}
+
+/* 確保在手機上也能正常顯示 */
+@media (max-width: 768px) {
+    .net-assets-row {
+        max-width: 100%; /* 手機上佔滿寬度 */
+        padding: 8px 12px 12px 12px;
+        font-size: 0.9rem;
+    }
+    .net-assets-row .value {
+        font-weight: 600; /* 加粗金額 */
+        font-size: 0.95rem;
+    }
+     /* 確保 #totalAssets 和 .net-assets-row 在手機上也佔滿寬 */
+     #homePage #assetsContainer > .total-assets,
+     #homePage #assetsContainer > .net-assets-row {
+       max-width: 100%;
+     }
+}
+

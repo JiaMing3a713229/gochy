@@ -174,8 +174,8 @@
                     <!-- 控制列 -->
                     <div class="control-bar asset-bar">
                         <span id="controlBarSummary" class="summary-amount">總金額: NT$ 0</span>
-                        <button id="showAssetsBtn" class="control-btn" onclick="switchDataView('assets')">現金</button>
-                        <button id="showStocksBtn" class="control-btn active" onclick="switchDataView('stocks')">證券</button>   
+                        <button id="showAssetsBtn" class="control-btn" onclick="">現金</button>
+                        <button id="showStocksBtn" class="control-btn active" onclick="">證券</button>   
                     </div>
                     <!-- 資料顯示區域 -->
                     <div id="stocksDataView" class="data-view" style="display: none;">
@@ -407,35 +407,97 @@
             <img id="zoomedImage" style="width: 100%; height: auto; border-radius: 8px;" alt="放大圖片">
         </div>
     </div>
-    <!-- 登入模態框 -->
-    <div id="loginModal" class="modal" style="display: flex;"> <div class="modal-content login-modal-content">
-            <div class="modal-header">
-                <h3>登入 Gochy</h3>
+
+
+    <!-- Bootstrap Modal -->
+    <div class="modal fade" id="loginModalBs" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered"> 
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loginModalLabel">登入 Gochy</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            <form id="loginFormActual" class="form-content">
-                 <div id="loginError" class="alert alert-danger" role="alert" style="display: none; font-size: 0.9rem; padding: 0.5rem 1rem;">
-                    登入失敗，請檢查帳號或密碼。
-                 </div>
-                <div class="mb-3">
-                    <label for="loginIdentifier" class="form-label">Email 或使用者名稱:</label>
-                    <input type="text" class="form-control" id="loginIdentifier" name="identifier" required placeholder="輸入 Email 或使用者名稱">
+                <div class="modal-body">
+                        <form id="loginFormActual" class="form-content">
+                            <div id="loginError" class="alert alert-danger" role="alert" style="display: none; font-size: 0.9rem; padding: 0.5rem 1rem;">
+                            登入失敗，請檢查帳號或密碼。
+                            </div>
+                        <div class="mb-3">
+                            <label for="loginIdentifier" class="form-label">Email 或使用者名稱:</label>
+                            <input type="text" class="form-control" id="loginIdentifier" name="identifier" required placeholder="輸入 Email 或使用者名稱">
+                        </div>
+                        <div class="mb-3">
+                            <label for="loginPassword" class="form-label">密碼:</label>
+                            <input type="password" class="form-control" id="loginPassword" name="password" required placeholder="輸入密碼">
+                        </div>
+
+                    </form>
                 </div>
-                <div class="mb-3">
-                    <label for="loginPassword" class="form-label">密碼:</label>
-                    <input type="password" class="form-control" id="loginPassword" name="password" required placeholder="輸入密碼">
+                <div class="modal-footer">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                 <button type="submit" form="loginFormActual" class="btn btn-primary w-100">登入</button> 
+                            </div>
+                            <div class="col-6 text-start">
+                                <a href="#" id="showRegisterLinkModal" class="footer-link">還沒有帳號？註冊</a>
+                            </div>
+                            <div class="col-6 text-end">
+                                <a href="#" id="forgotPasswordLinkModal" class="footer-link">忘記密碼？</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-actions">
-                    <button type="submit" class="btn-custom form-btn">登入</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="registerModalBs" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="registerModalLabel">註冊 Gochy</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            </form>
-            <div class="modal-footer-links">
-                <a href="#" id="showRegisterLink" class="footer-link">還沒有帳號？註冊</a>
-                <a href="#" id="forgotPasswordLink" class="footer-link">忘記密碼？</a>
+                <div class="modal-body">
+                    <form id="registerForm"> 
+                        <div id="registerError" class="alert alert-danger" role="alert" style="display: none; font-size: 0.9rem; padding: 0.5rem 1rem;">
+                            註冊失敗，請稍後再試。
+                        </div>
+                        <div class="mb-3">
+                            <label for="registerUsername" class="form-label">使用者名稱:</label>
+                            <input type="text" class="form-control" id="registerUsername" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="registerEmail" class="form-label">Email:</label>
+                            <input type="email" class="form-control" id="registerEmail" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="registerPassword" class="form-label">密碼:</label>
+                            <input type="password" class="form-control" id="registerPassword" name="password" required placeholder="至少6位數">
+                        </div>
+                        <div class="mb-3">
+                            <label for="registerConfirmPassword" class="form-label">確認密碼:</label>
+                            <input type="password" class="form-control" id="registerConfirmPassword" name="confirm_password" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-12 mb-2">
+                                <button type="submit" form="registerForm" class="btn btn-primary w-100">註冊</button>
+                            </div>
+                            <div class="col-12 text-center">
+                                <a href="#" id="showLoginLinkModal" class="footer-link">已經有帳號了？登入</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="registerModal" class="modal" style="display: none;">
+    <!-- <div id="registerModal" class="modal" style="display: none;">
         <div class="modal-content login-modal-content">
              <div class="modal-header">
                 <h3>註冊 Gochy</h3>
@@ -467,7 +529,7 @@
                 <a href="#" id="showLoginLink" class="footer-link">已經有帳號了？登入</a>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <div class="modal fade" id="editRecordModal" tabindex="-1" aria-labelledby="editRecordModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
