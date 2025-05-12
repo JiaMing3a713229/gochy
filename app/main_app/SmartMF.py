@@ -862,7 +862,91 @@ class SmartMF:
             collection_path = self._get_public_ledger_contents_collection_path(ledgerId = ledgerId)
         return self._get_records_by_date_range(collection_path, user_id, year=year, month=month)
 
+    def get_total_monthly_expense_for_ledger(self, user_id: str, ledger_id: str, ledger_type: str, year: int, month: int) -> float:
+        """
+        計算特定帳本在指定年月日的總支出 ('支出' 類型)。
+        """
+        monthly_records = self.get_monthly_expenses(
+            user_id=user_id,
+            ledgerId=ledger_id,
+            ledgerType=ledger_type,
+            year=year,
+            month=month
+        )
 
+        total_expense = 0
+        cash_total = 0
+        liabilities_total = 0
+        for record in monthly_records:
+            if record.get("transactionType") == "支出": # 確保此欄位名與 Firestore 中的一致
+                try:
+                    if(record.get("payment_method") == "現金"):
+                        cash_total += int(record.get("amount", 0))
+                    elif(record.get("payment_method") in self.optionType['assetType']['liabilities']):
+                        liabilities_total += int(record.get("amount", 0))
+                    total_expense += int(record.get("amount", 0))
+                except (ValueError, TypeError):
+                    print(f"警告：無法轉換帳本 {ledger_id} 中記錄 {record.get('id', 'N/A')} 的金額。")
+        ret = {
+            "total_expense": total_expense,
+            "cash_total": cash_total,
+            "liabilities_total": liabilities_total,
+        }
+
+        return ret
+
+    def get_all_ledgers_summary_for_month(self, uid: str, year: int, month: int) -> List[Dict[str, Any]]:
+        """
+        獲取使用者所有帳本在指定年月的支出摘要列表。
+        """
+        user_ledgers_map = self.get_user_ledgers(uid) 
+        all_ledgers_summary = []
+
+        # 處理個人帳本
+        if user_ledgers_map and isinstance(user_ledgers_map.get('personal'), list):
+            for ledgerId in user_ledgers_map['personal']:
+
+                expense = self.get_total_monthly_expense_for_ledger(
+                    user_id = uid, 
+                    ledger_id = ledgerId,
+                    ledger_type ='personal',
+                    year = year,
+                    month = month
+                )
+                all_ledgers_summary.append({
+                    "ledger_name": ledgerId,
+                    "ledger_type": "personal",
+                    "total_liabilities": round(expense.get('liabilities_total'), 2),
+                    "total_cash": round(expense.get('cash_total'), 2),
+                    "total_expense": round(expense.get('total_expense'), 2)
+                })
+
+        # 處理共享帳本
+        if user_ledgers_map and isinstance(user_ledgers_map.get('shared'), list):
+            for ledger_info in user_ledgers_map['shared']:
+                ledger_id = ledger_info.get('invite_code') # 這是 invite_code/group_id
+                ledger_name = ledger_info.get('name')
+                if not ledger_id or not ledger_name:
+                    print(f"警告：共享帳本資訊不完整: {ledger_info}")
+                    continue
+
+                expense = self.get_total_monthly_expense_for_ledger(
+                    user_id = uid, 
+                    ledger_id = ledger_id,
+                    ledger_type = 'shared',
+                    year=year,
+                    month=month
+                )
+                all_ledgers_summary.append({
+                    "ledger_name": ledger_name,
+                    "ledger_type": "shared",
+                    "total_expense": round(expense.get('total_expense'), 2),
+                    "total_liabilities": round(expense.get('liabilities_total'), 2),
+                    "total_cash": round(expense.get('cash_total'), 2)
+                })
+
+        return all_ledgers_summary
+    
     def _get_records_by_date_range(
         self,
         collection_path: str,
@@ -1029,6 +1113,21 @@ class SmartMF:
         info_dict  = {}
         if info_ret:
             info_dict = info_ret.to_dict()
+        
+        try:
+            current_display_date = datetime.strptime(date_str, "%Y/%m/%d")
+        except ValueError:
+            print(f"get_summary_data 中無效的 date_str 格式: {date_str}，將使用當前日期。")
+            current_display_date = datetime.now()
+        year_for_monthly_data = current_display_date.year
+        month_for_monthly_data = current_display_date.month
+
+        # --- 新增：獲取所有帳本在「當月」的支出列表 ---
+        all_ledgers_current_month_expenses_list = self.get_all_ledgers_summary_for_month(
+            uid=user_id,
+            year=year_for_monthly_data, # 使用 date_str 解析出的年月
+            month=month_for_monthly_data
+        )
 
         ret =  {
             "name": info_dict.get("username", "Unknown"),
@@ -1042,6 +1141,7 @@ class SmartMF:
             "total_liabilities_amount": total_liabilities_amount,
             "total_cost": total_cost,
             "total_income": total_income,
+            "all_ledgers_monthly_amount": all_ledgers_current_month_expenses_list, # 新增的數據
         }
 
         return ret
