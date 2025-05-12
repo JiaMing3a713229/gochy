@@ -26,8 +26,8 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth(); // 獲取 Auth 服務的引用
 
 // --- API Base URL ---
-const API_BASE_URL = 'http://127.0.0.1:8080/api'; // 確認 URL 正確
-// const API_BASE_URL = 'https://smart-m-f.de.r.appspot.com/api';
+// const API_BASE_URL = 'http://127.0.0.1:8080/api'; // 確認 URL 正確
+const API_BASE_URL = 'https://smart-m-f.de.r.appspot.com/api';
 const POST_API_BASE_URL = 'https://postflask-dot-web-firestore-453815.de.r.appspot.com/api'; // 確認 URL 正確
 
 // ---> DOM 緩存 (移到前面) <---
