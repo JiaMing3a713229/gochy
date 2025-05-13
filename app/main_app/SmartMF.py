@@ -1,4 +1,4 @@
-# timestamp: 2025-05-13 00:00:00
+# timestamp: 2025-05-13 23:00:00
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
 from datetime import datetime, timedelta
@@ -1509,7 +1509,6 @@ class SmartMF:
 
         
     def get_user_ledgers(self, user_id: str):
-        print(user_id)
         """
         Retrieves all ledgers for a user.
 
@@ -1525,7 +1524,6 @@ class SmartMF:
         collection_docs = self.firestore_client.db.document(self._get_user_info_collection_path(user_id=user_id)).get()
         if collection_docs:
             info_dict = collection_docs.to_dict()
-        print(info_dict)
         ledgersList = info_dict['ledgers']
         return ledgersList
     
