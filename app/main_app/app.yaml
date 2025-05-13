@@ -1,4 +1,5 @@
 runtime: python312  # 或使用 python312，根據您的 Python 版本選擇
+service: main-server # (建議) 給服務取個名字
 instance_class: F1  # 免費層級的實例類型，根據需求可調整（如 F2、F4）
 
 # 指定主應用程式檔案
