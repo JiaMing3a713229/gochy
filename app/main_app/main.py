@@ -752,6 +752,48 @@ def get_split_group_members(group_id):
         return jsonify({"error": "獲取群組成員失敗", "details": str(e)}), 500
      
 # <------------------------------------------------------>
+@app.route('/api/ledger/delete', methods=['DELETE'])
+@firebase_token_required
+def delete_user_ledger():
+    """獲取指定共享帳本 (群組) 的成員列表。"""
+    uid = g.uid # 當前請求的使用者 UID
+    ledgerId = request.args.get('ledgerId')
+    ledgerName = request.args.get('ledgerName')
+    ledgerType = request.args.get('ledgerType')
+    
+    try:
+        # --- 1. 獲取群組文檔 ---
+        #    假設共享帳本存在頂層 SplitGroups 集合，且文件 ID 為 group_id
+        print(f'api/ledger/delete called by UID: {uid}, ledgerId: {ledgerId}, ledgerType: {ledgerType}')
+        ret = wallet.delete_ledger(uid, ledgerId, ledgerName, ledgerType) # Changed to delete_ledger
+        return jsonify({"message": "ledger deleted"})
+
+    except Exception as e:
+        print(f"獲取群組 {ledgerId} 成員時出錯: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"message": "ledger failed"})
+
+
+@app.route('/api/ledger/join', methods=['POST'])
+@firebase_token_required
+def route_join_ledger():
+    uid = g.uid # 當前請求的使用者 UID
+    data = request.get_json()
+
+    if not data:
+        return jsonify({"message": "請求錯誤：未提供 JSON 資料。"}), 400
+
+    invite_code = data.get('inviteCode')
+    password = data.get('password') # 密碼可以是 None 或空字串
+    print(f"route_join_ledger called by UID: {uid}, invite_code: {invite_code}, password: {password}")
+
+    if not invite_code:
+        return jsonify({"message": "請求錯誤：缺少 'inviteCode'。"}), 400
+    
+    result = wallet.join_public_ledger(user_id = uid, inviteCode = invite_code, password = password) # 範例：直接獲取 client
+    return jsonify(f'Join to {invite_code}'), 200
+     
 
 
 if __name__ == "__main__":

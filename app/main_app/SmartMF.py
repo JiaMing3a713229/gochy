@@ -1498,6 +1498,7 @@ class SmartMF:
             
             groupLedgerData["invite_code"] = invite_code
             groupLedgerData["create_at"] = datetime.now().isoformat()
+            groupLedgerData['password'] = ""
             ledger_ref =  self.firestore_client.db.collection(self._get_public_ledgers_collection_path())
             ledger_ref.document(invite_code).set(groupLedgerData)
 
@@ -1526,5 +1527,71 @@ class SmartMF:
         ledgersList = info_dict['ledgers']
         return ledgersList
     
+    def delete_ledger(self, user_id: str, ledger_id: str, ledgerName:str, type: str = 'personal') -> bool:
+    
+        if type not in ['personal', 'shared']:
+            print(f"錯誤：無效的帳本類型 '{type}'。請使用 'personal' 或 'shared'。")
+            return False
+
+        doc_ref = self.firestore_client.db.collection('UserDB').document(user_id)
+
+        try:
+            doc = doc_ref.get()
+            if not doc.exists:
+                print(f"使用者 '{user_id}' 的文件不存在，無法刪除帳本。")
+                return False
+
+            if type == 'personal':
+                # ledger_name 參數在此處確實代表個人帳本的名稱
+                doc_ref.update({
+                    'ledgers.personal': firestore.ArrayRemove([ledger_id])
+                })
+                print(f"已嘗試從使用者 '{user_id}' 的個人帳本列表中刪除 '{ledger_id}'。")
+                return True
+            elif type == 'shared':
+                doc_ref.update({
+                    "ledgers.shared": firestore.ArrayRemove([{"invite_code": ledger_id, "name": ledgerName}])
+                })
+                print(f"已嘗試從使用者 '{user_id}' 的共享帳本中刪除邀請碼為 '{ledgerName}' 的項目。")
+                return True
+            # 由於已在函數開頭檢查 type，此處的 else 分支理論上不會執行
+            # else:
+            #     print(f"內部錯誤：帳本類型 '{type}' 未被正確處理。") # 應不會執行到此
+            #     return False
+
+        except Exception as e:
+            print(f"為使用者 '{user_id}' 刪除帳本 (標示: '{ledgerName}', 類型: '{type}') 時發生錯誤: {e}")
+            return False
+    
+    def join_public_ledger(self, user_id:str, inviteCode:str, password:str):
+
+        ref = self.firestore_client.db.collection("PublicLedgerDB").document(inviteCode)
+        if(ref.get().exists):
+            doc = ref.get()
+            doc_dict = doc.to_dict()
+            if(doc_dict.get("password") != "" and doc_dict.get("password") == password):
+                # 1. 更新使用者的帳本列表
+                user_ref = self.firestore_client.db.document(self._get_ledgers_collection_path(user_id))
+                user_ref.update({
+                    "ledgers.shared": firestore.ArrayUnion([{"invite_code": inviteCode, "name": doc_dict.get("name")}])
+                })
+                # 2. 更新分帳本的使用者列表
+                ref.update({
+                    "users": firestore.ArrayUnion([user_id])
+                })
+                return True
+            elif(doc_dict.get("password") == ""):
+                # 1. 更新使用者的帳本列表
+                user_ref = self.firestore_client.db.document(self._get_ledgers_collection_path(user_id))
+                user_ref.update({
+                    "ledgers.shared": firestore.ArrayUnion([{"invite_code": inviteCode, "name": doc_dict.get("name")}])
+                })
+                # 2. 更新分帳本的使用者列表
+                ref.update({
+                    "users": firestore.ArrayUnion([user_id])
+                })
+                return True
+            else:
+                print(f"錯誤：邀請碼 '{inviteCode}' 的密碼不正確。")
 
                 
