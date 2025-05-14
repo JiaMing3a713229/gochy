@@ -1183,6 +1183,7 @@ class SmartMF:
         elif(ledgerType == "shared"):
             collection_path = self._get_public_ledger_contents_collection_path(ledgerId = ledgerId)
             docs = self.firestore_client.get_collection(collection_path)
+            self.get_monthly_expenses
             existing_ids = [int(doc.to_dict()['id']) for doc in docs]
             next_id = max(existing_ids, default=0) + 1 if existing_ids else 1
             if isinstance(expense, Expense):
@@ -1521,11 +1522,54 @@ class SmartMF:
             A list of dictionaries, where each dictionary represents a ledger.
         """
 
-        collection_docs = self.firestore_client.db.document(self._get_user_info_collection_path(user_id=user_id)).get()
-        if collection_docs:
-            info_dict = collection_docs.to_dict()
-        ledgersList = info_dict['ledgers']
-        return ledgersList
+        user_doc_ref  = self.firestore_client.db.document(self._get_user_info_collection_path(user_id=user_id))
+        user_doc = user_doc_ref.get()
+
+        default_personal_ledger_id = "expenses" # 預設的個人帳本 ID
+        default_ledgers_map = {
+            "personal": [default_personal_ledger_id],
+            "shared": []
+        }
+
+        if user_doc.exists:
+            user_data = user_doc.to_dict()
+            ledgers_map = user_data.get("ledgers")
+
+            # 檢查 'ledgers' 欄位是否存在且是字典類型
+            if isinstance(ledgers_map, dict) and \
+               "personal" in ledgers_map and isinstance(ledgers_map["personal"], list) and \
+               "shared" in ledgers_map and isinstance(ledgers_map["shared"], list):
+                # 如果 'ledgers' 結構正確，直接返回
+                # 額外檢查 personal 列表是否為空，如果是，則添加預設帳本
+                if not ledgers_map["personal"]:
+                    print(f"User '{user_id}' has an empty 'personal' ledger list. Initializing with default.")
+                    ledgers_map["personal"] = [default_personal_ledger_id]
+                    try:
+                        user_doc_ref.update({"ledgers.personal": ledgers_map["personal"]})
+                        print(f"Successfully updated 'ledgers.personal' for user '{user_id}' with default ledger.")
+                    except Exception as e:
+                        print(f"Error updating 'ledgers.personal' for user '{user_id}': {e}")
+                        # 即使更新失敗，也返回包含預設帳本的 map，前端可以先使用
+                return ledgers_map
+            else:
+                # 'ledgers' 欄位不存在或結構不正確，需要初始化或修復
+                print(f"User '{user_id}' is missing 'ledgers' field or it's malformed. Initializing now.")
+                try:
+                    # 更新 Firestore 中的使用者文件，加入預設的 ledgers map
+                    user_doc_ref.set({"ledgers": default_ledgers_map}, merge=True) # 使用 merge=True 避免覆蓋其他欄位
+                    print(f"Successfully initialized 'ledgers' field for user '{user_id}'.")
+                    return default_ledgers_map
+                except Exception as e:
+                    print(f"Error initializing 'ledgers' field for user '{user_id}': {e}")
+                    # 如果更新 Firestore 失敗，也返回預設值，讓前端至少有東西可用
+                    return default_ledgers_map
+        else:
+            # 理論上，呼叫此函數時使用者文件應該存在 (因為使用者已登入並觸發前端請求)
+            # 但作為防禦性程式設計，如果文件不存在，也嘗試記錄並返回預設值
+            print(f"Warning: User document for user_id '{user_id}' not found in get_user_ledgers. This should not happen for logged-in users.")
+            # 這種情況下，我們不能寫入 Firestore，因為不知道文件該在哪裡
+            # 返回一個臨時的預設值，前端至少不會因為 NoneType 出錯
+            return default_ledgers_map
     
     def delete_ledger(self, user_id: str, ledger_id: str, ledgerName:str, type: str = 'personal') -> bool:
     
