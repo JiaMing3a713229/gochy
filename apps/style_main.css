@@ -1,0 +1,2256 @@
+/* style-main.css */
+:root {
+    --background: #f0f0f0; /* 更亮的淺灰色背景 */
+    --card-bg: #ffffff; /* 白色卡片背景 */
+    --text-primary: #333333; /* 深灰色文字 */
+    --text-secondary: #666666; /* 淺灰色文字 */
+    --primary: #4a90e2; /* 飽和的藍色 */
+    --secondary: #50e3c2; /* 飽和的青色 */
+    --success: #7ed321; /* 飽和的綠色 */
+    --danger: #ff6b6b; /* 飽和的紅色 */
+    --warning: #f8e71c; /* 飽和的黃色 */
+    --info: #4a90e2; /* 飽和的藍色 */
+
+    /* 新增：中性色階，用於邊框、分隔線、禁用狀態等 (來自上次建議) */
+    --neutral-100: #F3F4F6;
+    --neutral-200: #E5E7EB;
+    --neutral-300: #D1D5DB;
+    --neutral-700: #374151;
+
+    /* 新增：字體 (來自上次建議) */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* 引入 Inter 字體 (來自上次建議) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body {
+    font-family: var(--font-sans); /* 應用新的字體 */
+    font-weight: 400; /* 預設字重 (來自上次建議) */
+    background: var(--background);
+    color: var(--text-primary);
+    margin: 0;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom));
+    overflow: auto;
+    line-height: 1.6; /* 增加行高以提高可讀性 (來自上次建議) */
+    -webkit-font-smoothing: antialiased; /* 優化字體渲染 (來自上次建議) */
+    -moz-osx-font-smoothing: grayscale;  /* 優化字體渲染 (來自上次建議) */
+}
+
+h1, h2, h3, h4, h5, h6 { /* (來自上次建議) */
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 0.8em;
+    margin-bottom: 0.3em;
+}
+
+p { /* (來自上次建議) */
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+}
+
+.no-account-message {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    padding: 5px;
+}
+
+header.hidden {
+    transform: translateY(-100%);
+}
+
+.header-dropdown {
+    width: 130px;
+    max-width: 100%;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    padding: 4px;
+    text-align: center;
+    height: 35px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    background: var(--card-bg);
+}
+
+.header-dropdown option {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.main-container {
+    max-width: 1200px;
+    padding: 3px;
+}
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+.card-container, .table-container, .stock-container, .post-input-container, .post-card, .ai-assistant-container { /* (來自上次建議) */
+    background: var(--card-bg);
+    /* border-radius: 12px; */
+    padding: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.07);
+    border: none;
+    margin-bottom: 1rem;
+}
+
+.stock-container { /* 原始樣式，注意 .card-container 等已在上一個規則中更新 */
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 10px;
+    padding: 5px;
+}
+
+.stock-card{
+    background: var(--card-bg);
+    border-radius: 5px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.stock-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stock-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.stock-item{
+    font-size: 1.1rem;
+    font-weight: 400;
+    margin-bottom: 8px;
+}
+
+.stock-actions{
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end; /* 按鈕靠右 */
+    align-items: center;
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+    transition: opacity 0.3s ease, height 0.3s ease, padding 0.3s ease;
+    padding-right: 12px;
+    padding-bottom: 3px;
+    background-color: rgba(0, 0, 0, 0.03); /* 輕微背景區分 (來自上次建議) */
+    border-top: 1px solid rgba(0, 0, 0, 0.05); /* 頂部分隔線 (來自上次建議) */
+    max-height: 0; /* 初始隱藏高度 (來自上次建議) */
+}
+
+.stock-card.active .stock-actions {
+    opacity: 1;
+    /* height: 50px;  使用 max-height (來自上次建議) */
+    max-height: 60px;
+    padding: 10px 15px; /* (來自上次建議) */
+}
+
+.record-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end; /* 按鈕靠右 */
+    align-items: center;
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+    transition: opacity 0.3s ease, height 0.3s ease;
+    padding-right: 12px;
+    padding-bottom: 3px;
+}
+
+.record-card.active .record-actions {
+    opacity: 1;
+    height: 45px;
+}
+
+.btn-custom.acc-btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    border-radius: 4px;
+}
+
+.btn-custom {
+    background: var(--primary);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+}
+
+.btn-custom:hover {
+    transform: translateY(-2px);
+}
+
+.btn-buy {
+    background: var(--success, #28a745); /* (來自上次建議，增加預設顏色) */
+    color: white;
+    padding: 6px 14px; /* (來自上次建議) */
+    border-radius: 5px; /* (來自上次建議) */
+    border: none;
+    font-size: 0.85rem; /* (來自上次建議) */
+    font-weight: 500; /* (來自上次建議) */
+    text-transform: uppercase;
+    transition: background-color 0.2s ease, transform 0.1s ease; /* (來自上次建議) */
+    cursor: pointer; /* (來自上次建議) */
+}
+
+.btn-buy:hover {
+    background: #218838; /* (來自上次建議) */
+    transform: translateY(-1px); /* 原始效果，可與上次建議的 :active 效果結合 */
+}
+.btn-buy:active { /* (來自上次建議) */
+    transform: scale(0.95);
+}
+
+
+.btn-sell {
+    background: var(--danger, #dc3545); /* (來自上次建議，增加預設顏色) */
+    color: white;
+    padding: 6px 14px; /* (來自上次建議) */
+    border-radius: 5px; /* (來自上次建議) */
+    border: none;
+    font-size: 0.85rem; /* (來自上次建議) */
+    font-weight: 500; /* (來自上次建議) */
+    text-transform: uppercase;
+    transition: background-color 0.2s ease, transform 0.1s ease; /* (來自上次建議) */
+    cursor: pointer; /* (來自上次建議) */
+}
+
+.btn-sell:hover {
+    background: #c82333; /* (來自上次建議) */
+    transform: translateY(-1px); /* 原始效果 */
+}
+.btn-sell:active { /* (來自上次建議) */
+    transform: scale(0.95);
+}
+
+.stock-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.stock-price {
+    font-size: 1.1rem;
+    font-weight: 400;
+}
+
+.stock-change {
+    font-size: 1rem;
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.arrow {
+    font-size: 1.2rem;
+}
+
+.positive { color: var(--success); }
+.negative { color: var(--danger); }
+.neutral { color: var(--text-secondary); }
+
+.form-label { /* (來自上次建議) */
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.form-input, .form-control, .form-select { /* (來自上次建議) */
+    display: block;
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9375rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--text-primary);
+    background-color: var(--card-bg);
+    background-clip: padding-box;
+    border: 1px solid var(--neutral-300);
+    appearance: none;
+    border-radius: 8px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+/* 為了與上次建議的 primary-rgb 兼容，這裡保留原來的 focus 樣式，但上次建議的更好 */
+.form-control:focus, .form-select:focus, .form-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+    outline: 0; /* (來自上次建議) */
+    color: var(--text-primary); /* (來自上次建議) */
+    background-color: var(--card-bg); /* (來自上次建議) */
+}
+
+
+.form-select { /* (來自上次建議) */
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.875rem center;
+    background-size: 16px 12px;
+}
+
+
+footer.nav-bar {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: var(--card-bg); /* (來自上次建議) */
+    border-top: 1px solid var(--neutral-200); /* (來自上次建議) */
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 1000;
+    transition: transform 0.3s ease;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05); /* (來自上次建議) */
+}
+
+footer.hidden {
+    transform: translateY(100%);
+}
+
+.nav-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px; /* 原始 gap */
+    padding: 0.5rem 0.75rem; /* (來自上次建議) */
+    text-decoration: none;
+    background: transparent;
+    color: var(--text-secondary); /* (來自上次建議) */
+    transition: all 0.3s ease;
+}
+.nav-button svg { /* (來自上次建議) */
+    width: 22px;
+    height: 22px;
+    margin-bottom: 2px;
+}
+
+.nav-button span { /* (來自上次建議) */
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.nav-button.active {
+    color: var(--primary); /* (來自上次建議) */
+    background-color: transparent; /* (來自上次建議) */
+}
+.nav-button.active svg { /* (來自上次建議) */
+    stroke: var(--primary);
+}
+.nav-button:hover { /* (來自上次建議) */
+    color: var(--primary);
+}
+
+
+.income-row { background-color: rgba(126, 211, 33, 0.1); }
+.expense-row { background-color: rgba(255, 107, 107, 0.1); }
+.income-amount { color: var(--success); }
+.expense-amount { color: var(--danger); }
+.amount-cell { font-weight: 400; text-align: right; }
+
+.option-container { /* (來自上次建議) */
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    display: flex; /* 確保是 flex (原始已有) */
+}
+
+.option-card { /* (來自上次建議) */
+    flex: 1;
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    text-align: center;
+    border: 1px solid var(--neutral-200);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out; /* (來自上次建議) */
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03); /* (來自上次建議) */
+}
+
+.option-card:hover { /* (來自上次建議) */
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+}
+.option-card.active-option { /* (來自上次建議) */
+    background-color: var(--primary) !important;
+    color: white !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+}
+
+.option-card h3 { /* (來自上次建議) */
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 500;
+}
+
+.form-content {
+    margin-top: 16px;
+}
+
+/* 主提交按鈕 (來自上次建議) */
+.btn-custom.form-btn, .fixed-submit-btn {
+    background-color: var(--primary);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out, transform 0.1s ease-out;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06);
+}
+.btn-custom.form-btn:hover, .fixed-submit-btn:hover {
+    background-color: #2563EB;
+    transform: translateY(-1px);
+}
+.btn-custom.form-btn:active, .fixed-submit-btn:active {
+    transform: translateY(0);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+.btn-custom.form-btn:disabled, .fixed-submit-btn:disabled {
+    background-color: var(--neutral-300);
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.form-btn { /* 這個 class 名稱與 .btn-custom.form-btn 有重疊，注意 specificity */
+    display: block;
+    margin: 0 auto;
+}
+
+
+.record-card-container { /* (來自上次建議) */
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    border-radius: 5px; /* 原始 */
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* 原始 */
+    gap: 2px; /* 原始 */
+    margin-bottom: 6px; /* 原始 */
+}
+
+.record-Item-title{
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-secondary)
+}
+
+.sub-container{
+    width: 100%;
+    height: 100%;
+    background-color: #fff9f0; /* 原始特殊背景色 */
+    border-radius: 5px;
+    padding: 3px;
+    border:1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 6px;
+}
+.record-card { /* (來自上次建議) */
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--neutral-200);
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; /* 確保 ease-out */
+    margin-bottom: 2px; /* 原始 */
+    height: auto; /* 原始 */
+    min-height: 15px; /* 原始 */
+    display: flex; /* 原始 */
+    flex-direction: column; /* 原始 */
+    justify-content: space-between; /* 原始 */
+    overflow: hidden; /* 原始 */
+}
+
+.record-card:hover { /* (來自上次建議) */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.07), 0 2px 6px -1px rgba(0, 0, 0, 0.07);
+}
+
+.card-headerTitle{
+    border: none;
+}
+
+.load-complete-card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 6px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 10vh;
+    min-height: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+}
+
+.record-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 3px;
+}
+
+.record-item {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 3px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.record-card.income-card {
+    background-color: rgba(126, 211, 33, 0.1); /* 原始 */
+}
+
+.record-card.expense-card {
+    background-color: rgba(255, 107, 107, 0.1); /* 原始 */
+}
+
+#accountList {
+    display: none;
+}
+
+.summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3px;
+}
+
+.summary-item {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.summary-item.income {
+    color: var(--success);
+}
+
+.summary-item.expense {
+    color: var(--danger);
+}
+
+.ratio-bar {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+}
+
+.ratio-income {
+    height: 100%;
+    background: var(--success);
+    transition: width 0.5s ease;
+}
+
+.ratio-expense {
+    height: 100%;
+    background: var(--danger);
+    transition: width 0.5s ease;
+}
+
+.summary-total {
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin: 3px 0;
+}
+
+#summaryCard {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    margin: 3px 0;
+}
+
+#accountForm, #assetForm {
+    padding: 16px;
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+.ai-assistant-title{
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+    font-weight: 600;
+    /* margin-bottom: 1px; (重複) */
+    color: var(--text-primary);
+}
+
+#accountForm .mb-3.compact, #assetForm .mb-3.compact {
+    margin-top: 1px;
+    margin-bottom: 1px;
+}
+
+#accountForm .form-label, #assetForm .form-label { /* (來自上次建議) */
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem; /* (來自上次建議) */
+    font-weight: 500;
+}
+
+#accountForm .form-control, #accountForm .form-select,
+#assetForm .form-control, #assetForm .form-select { /* (來自上次建議，簡化重複) */
+    font-size: 0.9375rem;
+    padding: 0.625rem 0.875rem;
+    /* height: 36px; (由 padding 決定) */
+    border-radius: 8px; /* (來自上次建議) */
+}
+
+#accountForm .form-select option, #assetForm .form-select option {
+    font-size: 0.8rem; /* 原始 */
+}
+
+.card-container { /* 這個 class 名稱在多處使用，注意樣式層疊 */
+    overflow-y: auto;
+    /* max-height: calc(100vh - 120px); (這個可能需要根據上下文調整) */
+}
+
+.assets-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 3px;
+}
+
+.total-assets { /* (來自上次建議) */
+    background: linear-gradient(135deg, var(--primary) 0%, var(--info) 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    width: 100%; /* 原始 */
+    max-width: 300px; /* 原始 */
+    /* border-bottom: 1.5px solid rgba(0, 0, 0, 0.1); (被新樣式取代) */
+    margin-bottom: 0.1rem; /* (來自上次建議) */
+}
+
+.total-assets .label { /* (來自上次建議) */
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0.25rem;
+}
+
+.total-assets .value { /* (來自上次建議) */
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: white;
+}
+
+.asset-card { /* 這個 class 名稱與 .assetItem-card 不同，注意區分 */
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 300px;
+}
+
+.asset-card .label {
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+.asset-card .value {
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--text-primary);
+}
+
+#loading {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 16px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#loading.visible {
+    opacity: 1;
+}
+
+
+/* 資產卡片樣式 (assetItem-card) */
+.assetItem-card {
+  background: linear-gradient(145deg, #ffffff, #f0f4f8); /* 原始 */
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  margin-bottom: 3px;
+  /* transition: all 0.3s ease; */
+  overflow: hidden;
+  border: 1px solid #e0e6ed;
+}
+
+.assetItem-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.assetItem-card.active {
+  border-color: #4a89dc; /* 原始 */
+  box-shadow: 0 0 0 2px rgba(74, 137, 220, 0.2);
+}
+
+.assetItem-card-inner {
+  width: 95%; /* 原始，注意這個可能導致內容在卡片內不完全對齊 */
+  padding: 3px; /* 原始，非常小的 padding */
+}
+
+.assetItem-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.assetItem-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.assetItem-type-icon {
+  font-size: 20px;
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  background-color: #f0f4f8;
+  border-radius: 50%;
+}
+
+.assetItem-item {
+  font-weight: 600;
+  font-size: 16px;
+  color: #333;
+}
+
+.assetItem-price {
+  font-weight: 700;
+  font-size: 18px;
+  color: #2c3e50;
+}
+
+.assetItem-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.assetItem-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.assetItem-date, .assetItem-type {
+  color: #7f8c8d;
+  font-size: 13px;
+}
+
+.assetItem-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center; /* 原始已有 */
+}
+
+.btn-record {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #3498db; /* 原始 */
+  color: white;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-record:hover {
+  background-color: #2980b9; /* 原始 */
+}
+
+.btn-icon {
+  font-size: 14px;
+}
+
+.btn-text {
+  font-size: 14px;
+}
+.control-btn { /* 通用控制按鈕 */
+    padding: 8px 24px;
+    border: none;
+    border-radius: 4px;
+    background-color: var(--primary);
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    flex-shrink: 0; /* 原始 */
+}
+
+.control-btn.active {
+    background-color: var(--secondary);
+}
+
+.control-btn:hover {
+    background-color: var(--info);
+}
+
+.data-view {
+    display: none;
+}
+
+.data-view.active {
+    display: block;
+}
+.footer-info {
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.footer-info p {
+    margin: 0;
+}
+
+
+/* CSS for SharePage (貼文相關) */
+.post-input-container { /* 已在 .card-container 規則中定義，這裡可以放特定於 post-input-container 的覆蓋 */
+    margin-bottom: 1rem; /* 覆蓋 .card-container 的 margin-bottom */
+}
+
+.post-input-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: #e0e0e0;
+    border-radius: 50%;
+    background-image: url('https://storage.googleapis.com/supwallet_postdb/defult_avater.jpeg');
+    background-size: cover;
+}
+
+.post-input {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 20px;
+    background: #f0f2f5; /* 淺灰色背景 */
+    font-size: 1rem;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.post-input:focus {
+    outline: none;
+    background: #e8ecef;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.post-form-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.user-name {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.privacy-select {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    width: auto;
+    background: #f0f2f5;
+    border: none;
+    border-radius: 4px;
+}
+
+.post-textarea {
+    border: none;
+    resize: none;
+    font-size: 1.2rem;
+    padding: 8px 0;
+    background: transparent;
+}
+.post-textarea:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.image-upload-container {
+    position: relative;
+}
+
+.image-preview {
+    margin-top: 8px;
+    max-height: 200px;
+    overflow: hidden;
+    border-radius: 8px;
+    display: none; /* JS 控制顯示 */
+}
+
+.image-preview img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+/* 貼文卡片 */
+.posts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem; /* 調整間距 */
+}
+
+.post-card { /* 已在 .card-container 規則中定義，這裡可以放特定於 post-card 的覆蓋 */
+    padding: 1rem;
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.post-user {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--primary);
+}
+
+.post-time {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.post-list {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.post-content {
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    color: var(--text-primary); /* 確保貼文內容顏色 */
+}
+
+.post-image { /* 單圖顯示 */
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.post-reactions {
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid var(--neutral-200); /* 使用 CSS 變數 */
+    padding-top: 8px;
+}
+
+.reaction-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.reaction-btn:hover {
+    background: var(--neutral-100); /* 使用 CSS 變數 */
+    transform: scale(1.1);
+}
+
+.reaction-count {
+    font-size: 0.8rem;
+}
+
+#imageZoomModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#imageZoomModal .modal-content {
+    position: relative;
+}
+
+#zoomedImage {
+    cursor: pointer;
+}
+/* 貼文模態框樣式 */
+#postModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+/* 控制貼文模態框內容區域 */
+#postModal .modal-content {
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 0 auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+/* 控制記帳模態框大小 (Bootstrap Modal) */
+#recordModal .modal-dialog {
+    max-width: 500px;
+    width: 90%;
+}
+
+#recordModal .modal-content {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.image-preview-container {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.image-preview-item {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid var(--neutral-200); /* 使用 CSS 變數 */
+}
+
+.image-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.post-images-container {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+/* 單圖情況 */
+.post-images-container.single-column {
+    display: block;
+}
+
+/* 輪播情況 */
+.post-images-container.carousel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+    height: 300px;
+}
+
+.carousel-images {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.post-image-item { /* 輪播圖內的圖片 */
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    z-index: 10;
+    border-radius: 50%; /* 圓形按鈕 */
+}
+
+.carousel-btn.prev {
+    left: 8px;
+}
+
+.carousel-btn.next {
+    right: 8px;
+}
+
+.carousel-indicators {
+    position: absolute;
+    bottom: 8px;
+    left: 50%; /* 水平居中 */
+    transform: translateX(-50%); /* 水平居中 */
+    display: flex;
+    gap: 6px; /* 指示點間距 */
+}
+
+.indicator {
+    width: 8px;
+    height: 8px;
+    background: var(--neutral-300); /* 未選中顏色 */
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.indicator.active {
+    background: var(--primary); /* 選中顏色 */
+}
+
+/* 控制列樣式 */
+.control-bar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 5px 0;
+    padding-right: 10px;
+    gap: 10px;
+}
+.control-bar.asset-bar {
+    display: flex;            /* 設定為 Flexbox 佈局 */
+    flex-direction: row;      /* 主軸為水平方向 (預設值，可省略) */
+    align-items: center;      /* 交叉軸（垂直）居中對齊 */
+    flex-wrap: nowrap;        /* 強制不換行，確保元素在同一行 */
+    gap: 10px;                /* 元素之間的間距 */
+    margin-bottom: 10px;
+    padding: 0 10px;          /* 容器的左右內邊距 */
+    min-height: 40px;         /* 最小高度 */
+    width: 100%;              /* 確保控制列本身佔滿可用寬度 */
+    box-sizing: border-box;   /* 內邊距和邊框不影響總寬度 */
+}
+.summary-amount {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-right: auto;
+    padding-right: 10px;
+}
+
+/* 開銷追蹤區域樣式 */
+.date-range-container {
+    background-color: var(--card-bg);
+    padding: 1rem; /* 增加 padding */
+    border-radius: 8px; /* 統一圓角 */
+    margin-bottom: 1.5rem; /* 統一間距 */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); /* 添加輕微陰影 */
+}
+
+.summary-card { /* 這個 class 也被用在 .record-card 等，需注意特異性 */
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 0.2rem; /* 增加 padding */
+    margin-bottom: 0.2rem; /* 調整間距 */
+    text-align: center;
+}
+
+.chart-container {
+    width: 100vw;
+    height:auto; /* 自適應高度 */
+    margin: 1rem 0; /* 上下間距 */
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    max-width: 100%;
+    background-color: var(--card-bg); /* 給圖表容器一個背景 */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+#expenseCategoryChart {
+    max-width: 100%;
+    height: auto;
+}
+
+.expense { /* 總開銷文字顏色 */
+    color: var(--danger);
+}
+
+#datePickerContainer {
+    transition: all 0.3s ease;
+}
+
+#datePickerContainer.hidden {
+    display: none;
+}
+
+#submitSpinner {
+    vertical-align: middle;
+}
+
+.category-table-container {
+    margin-top: 1.5rem; /* 增加與上方圖表的間距 */
+    width: 100%;
+    max-width: 450px; /* 可略微增加最大寬度 */
+    margin: 1rem auto;
+    background-color: var(--card-bg); /* 給表格容器背景 */
+    padding: 0.5rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.category-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.category-table th,
+.category-table td {
+    padding: 8px 10px; /* 調整 padding */
+    text-align: left; /* 預設靠左 */
+    border-bottom: 1px solid var(--neutral-200); /* 使用 CSS 變數 */
+}
+
+.category-table th {
+    font-weight: 500;
+    color: var(--text-secondary);
+    background-color: var(--neutral-100); /* 表頭背景 */
+}
+.category-table th:first-child { border-top-left-radius: 6px; } /* 圓角 */
+.category-table th:last-child { border-top-right-radius: 6px; }
+
+.category-table td:nth-child(2), /* 金額 */
+.category-table td:nth-child(3) { /* 佔比 */
+    text-align: right;
+}
+
+.category-table .no-data {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 1rem;
+}
+
+.help-text { /* (來自上次建議) */
+    color: var(--text-secondary);
+    font-weight: 400; /* 調整字重 */
+    font-size: 0.7rem;
+    margin-bottom: 0.3rem;
+    line-height: 1.2;
+}
+
+.ai-assistant-container { /* 已在 .card-container 規則中定義，這裡可以放特定於 AI 助手的覆蓋 */
+    padding: 1rem;
+}
+
+.ai-messages {
+    min-height: 80px; /* 調整最小高度 */
+    padding: 0.75rem;
+    border: 1px solid var(--neutral-200);
+    border-radius: 6px;
+    background-color: var(--neutral-100); /* 訊息區背景 */
+    overflow-y: auto;
+}
+
+.message-placeholder {
+    color: var(--text-secondary);
+    font-style: italic;
+    margin: 0;
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.ai-message {
+    margin: 0.25rem 0;
+    padding: 0.25rem;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+/* 記帳表單 CSS (通用輸入框樣式已在 .form-input, .form-control 中定義) */
+.form-section {
+    margin-bottom: 1.5rem; /* 調整區塊間距 */
+}
+
+.input-group {
+    display: flex;
+}
+
+.input-group-text {
+    padding: 0.625rem 0.875rem; /* 與輸入框 padding 保持一致 */
+    font-size: 0.9375rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--text-secondary); /* 調整顏色 */
+    text-align: center;
+    white-space: nowrap;
+    background-color: var(--neutral-100); /* 調整背景色 */
+    border: 1px solid var(--neutral-300);
+    border-radius: 8px 0 0 8px; /* 配合輸入框圓角 */
+}
+.input-group .form-input, .input-group .form-control {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+
+.fixed-action-buttons {
+    position: fixed;
+    bottom: calc(70px + 1rem + env(safe-area-inset-bottom)); /* (來自上次建議，調整距離) */
+    z-index: 1050;
+    display: flex;
+    gap: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* .fixed-submit-btn 已在 .btn-custom.form-btn 中定義 */
+
+#submitAccountBtn {
+    background-color: var(--success); /* 原始，很好 */
+    color: white;
+}
+#submitAccountBtn:hover {
+    background-color: #6bbd46; /* 成功色的深色調 */
+}
+
+#submitAssetBtn {
+    background-color: var(--info); /* 原始，很好 */
+    color: white;
+}
+#submitAssetBtn:hover {
+    background-color: #377cc8; /* 資訊色的深色調 */
+}
+
+
+.stock-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.stock-profit-loss .arrow {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+/* Container for the entire stock view (header + cards) */
+.stock-view-container {
+    padding: 0 10px 10px 10px;
+}
+
+/* Styles for the header row */
+.stock-list-header {
+    display: grid;
+    grid-template-columns: 1fr 18% 25% 28%;
+    gap: 5px;
+    padding: 10px 12px; /* 增加 padding */
+    margin-bottom: 8px; /* 增加與下方卡片的間距 */
+    border-bottom: 1px solid var(--primary);
+    background-color: rgba(var(--primary-rgb, 59, 130, 246), 0.05); /* 使用 primary-rgb (如果定義了) */
+    border-radius: 6px 6px 0 0; /* 圓角 */
+    align-items: baseline;
+}
+
+.header-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--primary);
+    text-align: right;
+    white-space: nowrap;
+}
+
+.header-label.item-label {
+    text-align: left;
+}
+
+.header-label.quantity-label{
+    text-align: left;
+}
+.header-label.value-label{
+    text-align: center;
+}
+.header-label.pl-label{
+    text-align: center;
+}
+
+/* Container for the actual stock cards - Apply grid here */
+.stock-cards-area {
+    display: grid;
+    grid-template-columns: 1fr; /* 已是單欄 */
+    gap: 8px; /* 增加卡片間距 */
+}
+
+.stock-cards-area > .no-account-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 20px;
+}
+
+.stock-card-content.single-row {
+    display: grid;
+    grid-template-columns: 1fr 18% 25% 28%;
+    gap: 3px;
+    align-items: baseline;
+    padding: 12px 10px; /* 增加 padding */
+}
+
+.sc-item-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.sc-quantity {
+    color: var(--text-secondary);
+}
+
+.sc-current-value {
+    font-weight: 600;
+    text-align: center;
+}
+
+.sc-profit-loss {
+    font-weight: 500;
+    font-size: 0.9rem;
+    display: inline-flex;
+    gap: 2px;
+    text-align: right;
+    align-items: baseline; /* 確保箭頭和數字對齊 */
+}
+
+.sc-profit-loss .arrow {
+    font-size: 0.9rem;
+}
+
+header.header-container { /* 頂部 Header (來自上次建議) */
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* 讓其他直接子元素預設靠左 */
+
+    background: var(--card-bg);
+    padding: 6px; /* 調整 padding */
+    border-bottom: 1px solid var(--neutral-200); /* 使用 CSS 變數 */
+    /* position: sticky; */
+    top: 0;
+    /* z-index: 1000; */
+    transition: transform 0.3s ease;
+    gap: 3px; /* 調整間距 */
+    flex-wrap: nowrap; 
+}
+
+#pageTitle { /* (來自上次建議) */
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600; /* 加粗 */
+    flex-shrink: 0;
+    color: var(--text-primary); /* (來自上次建議) */
+}
+
+.header-username { /* (來自上次建議) */
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500; /* 調整字重 */
+}
+
+#logoutButton {
+    /* 移除或修改可能存在的 margin-left: auto; 或 margin-left: 8px; */
+    /* margin-left: 0; */
+    align-self: flex-end; /* 關鍵：使此按鈕在垂直排列的父容器中靠右顯示 */
+    font-size: 0.875rem;
+    color: var(--primary);
+    background-color: transparent; /* 或者您希望的背景色 */
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    flex-shrink: 0; /* 防止按鈕在空間不足時被壓縮 */
+    /* width: auto; */ /* 確保按鈕寬度由內容和 padding 決定，而不是撐滿 */
+    margin-top: 2px; /* 可選：如果希望它與上方元素有一定間距 */
+}
+#logoutButton:hover {
+    background-color: rgba(var(--primary-rgb, 59, 130, 246), 0.1);
+}
+
+
+/* 帳本內視圖切換按鈕 (來自上次建議) */
+#recordsSection .view-toggle-bar .control-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: none;
+    border-radius: 6px; /* 統一圓角 */
+    transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+    margin: 2px 0;
+    border-bottom: 2px solid transparent;
+}
+
+#recordsSection .view-toggle-bar .control-btn:not(.active):hover {
+    color: var(--text-primary);
+    background-color: var(--neutral-100); /* 使用 CSS 變數 */
+}
+
+#recordsSection .view-toggle-bar .control-btn.active {
+    background-color: transparent;
+    color: var(--primary);
+    font-weight: 600;
+    border-bottom-color: var(--primary);
+}
+
+.view-toggle-bar {
+    display: flex;
+    justify-content: center;
+    gap: 1rem; /* 增加按鈕間距 */
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--neutral-200); /* 在按鈕組下方加分隔線 */
+    padding-bottom: 0.5rem;
+}
+
+.ledger-view {
+    display: none;
+}
+
+.ledger-view.active {
+    display: block;
+}
+
+/* Header 登入/登出狀態容器 */
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+#headerLoggedIn {
+    margin-top: 0; /* 移除 margin-top */
+    /* justify-content: flex-start; (由 .header-username 的 margin-right: auto 控制) */
+}
+
+.header-app-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.header-greeting {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+#headerUserId {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.header-separator {
+    color: #ccc;
+    margin: 0 5px;
+}
+
+.header-link {
+    font-size: 0.9rem;
+    color: var(--primary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+.header-link:hover {
+    color: var(--secondary);
+    text-decoration: underline;
+}
+
+.page-section-title { /* (來自上次建議) */
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 1rem 0 1rem 0; /* 上下間距，移除左邊距 */
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--neutral-200);
+}
+
+
+/* Header 帳本切換器 (來自上次建議) */
+.ledger-switch-btn {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+    max-width: 180px; /* 原始 */
+    display: inline-flex !important; /* 原始 */
+    align-items: center;
+    text-align: left;
+    overflow: hidden;
+    border-radius: 6px;
+    border-color: var(--neutral-300);
+    color: var(--text-secondary);
+    background-color: var(--card-bg);
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03);
+}
+.ledger-switch-btn:hover, .ledger-switch-btn:focus {
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb, 59, 130, 246), 0.1);
+}
+.ledger-switch-btn #currentLedgerIcon {
+    display: inline-block;
+    margin-right: 6px;
+    flex-shrink: 0;
+    font-size: 1rem;
+    color: var(--primary);
+}
+.ledger-switch-btn #currentLedgerName {
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-grow: 1;
+}
+#headerLogoutLink {
+    margin-left: auto;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* 下拉選單樣式 (來自上次建議) */
+.ledger-dropdown-item {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem; /* (來自上次建議) */
+    cursor: pointer;
+    font-size: 0.875rem; /* (來自上次建議) */
+}
+#ledgerSwitchMenu { /* (來自上次建議) */
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: var(--neutral-200);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+.ledger-dropdown-item .item-content { display: flex; align-items: center; gap: 8px; overflow: hidden;}
+.ledger-dropdown-item .item-icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; color: var(--text-secondary);}
+.ledger-dropdown-item .item-name { font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1;}
+.ledger-dropdown-item .item-type { font-size: 0.75rem; color: #fff; background-color: #6c757d; padding: 1px 5px; border-radius: 4px; margin-left: 8px; flex-shrink: 0; opacity: 0.8;}
+.ledger-dropdown-item.active, .ledger-dropdown-item:active {
+    font-weight: 500; /* (來自上次建議) */
+    color: var(--primary) !important;
+    background-color: rgba(var(--primary-rgb, 59, 130, 246), 0.1) !important; 
+}
+.ledger-dropdown-item.active .item-icon { color: var(--primary); } /* (來自上次建議) */
+.ledger-dropdown-item.active .item-type { background-color: rgba(var(--primary-rgb, 59, 130, 246), 0.2); color: var(--primary); } /* (來自上次建議) */
+#ledgerSwitchMenu .dropdown-divider {
+    margin: 0.3rem 0;
+    border-top-color: var(--neutral-200); /* (來自上次建議) */
+}
+#ledgerSwitchMenu .dropdown-header {
+    /* padding: 0.5rem 1rem 0.25rem; (來自上次建議) */
+    font-size: 0.75rem; /* (來自上次建議) */
+    color: var(--text-secondary); /* (來自上次建議) */
+}
+#addLedgerOption i { color: var(--success); } /* (來自上次建議) */
+
+
+/* 新增帳本 Modal 樣式 */
+#addMembersSection {
+    background-color: var(--neutral-100); /* 使用 CSS 變數 */
+    border-top: 1px solid var(--neutral-200); /* 使用 CSS 變數 */
+    margin-top: 1rem;
+    padding: 1rem; /* 增加 padding */
+    border-radius: 6px; /* 圓角 */
+}
+.member-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.member-name-input {
+    flex-grow: 1;
+}
+
+.remove-member-btn {
+    padding: 0.25rem 0.5rem; /* 調整 padding */
+    font-size: 0.8rem;
+    line-height: 1.2; /* 調整行高 */
+    flex-shrink: 0;
+    border-radius: 4px; /* 圓角 */
+}
+
+#addMemberFieldBtn i {
+    vertical-align: middle;
+    margin-right: 4px;
+}
+
+/* 總負債和淨資產的行 (來自上次建議) */
+.net-assets-row {
+    display: flex;
+    justify-content: space-around; /* (來自上次建議) */
+    align-items: center;
+    padding: 0.3rem 0.3rem; /* (來自上次建議) */
+    margin-top: 0.1rem; /* (來自上次建議) */
+    margin-bottom: 1rem; /* (來自上次建議) */
+    background: var(--card-bg);
+    font-size: 0.9rem;
+    width: 100%;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05); /* (來自上次建議) */
+}
+#totalAssets { /* (來自上次建議，調整與 net-assets-row 的銜接) */
+    border-bottom: none;
+    padding-bottom: 1rem; /* 確保與 net-assets-row 視覺分離 */
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    /* margin-bottom: 0; (不需要，讓 .net-assets-row 的 margin-top 控制) */
+}
+
+.net-assets-row > div {
+    text-align: center;
+    flex-basis: 48%;
+}
+
+.net-assets-row .label { /* (來自上次建議) */
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.125rem;
+}
+
+.net-assets-row .value { /* (來自上次建議) */
+    font-weight: 600;
+    font-size: 1.125rem;
+}
+
+.net-assets-row .liability-value { /* (來自上次建議) */
+    color: var(--danger);
+}
+
+.ledger-expenses-summary-container{
+    margin-bottom: 2.5rem;
+}
+
+#sharedLedgerInviteCodeContainer{
+    display:none;
+    margin-right: 2rem;
+}
+
+
+/* 首頁帳本支出列表 */
+#allLedgersMonthlyExpensesListHome {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--neutral-200); /* 使用 CSS 變數 */
+    border-radius: 8px; /* 增加圓角 */
+    overflow: hidden;
+    background-color: var(--card-bg); /* 給列表一個背景 */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.ledger-table-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 2fr) repeat(3, minmax(90px, 1fr)); /* 帳本名稱欄位可以更寬 */
+    border-bottom: 1px solid var(--neutral-100); /* 更淺的分隔線 */
+}
+
+#allLedgersMonthlyExpensesListHome .ledger-table-row:last-child {
+    border-bottom: none;
+}
+
+.ledger-table-header {
+    background-color: var(--neutral-100); /* 使用 CSS 變數 */
+}
+.ledger-table-header .ledger-table-cell {
+    font-weight: 500; /* 調整字重 */
+    color: var(--text-secondary); /* 調整顏色 */
+    font-size: 0.85rem; /* 調整字體大小 */
+}
+
+.ledger-table-footer {
+    background-color: var(--neutral-100);
+    border-top: 2px solid var(--neutral-200); /* 更明顯的頂部分隔 */
+    grid-template-columns: repeat(6, 1fr);
+    font-size: 0.8rem; /* 調整字體大小 */
+}
+.ledger-table-footer .ledger-table-cell {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.ledger-table-cell {
+    padding: 0.75rem;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    font-size: 0.9rem; /* 內容字體 */
+}
+
+.ledger-name-column-header,
+.ledger-name-cell,
+.ledger-name-column-footer {
+    justify-content: flex-start;
+    text-align: left;
+}
+
+.ledger-name-cell .ledger-type-icon {
+    flex-shrink: 0;
+    font-size: 1.1em;
+    margin-left: 0; /* 圖示在文字前 */
+    margin-right: 8px; /* 圖示和文字的間距 */
+    color: var(--text-secondary); /* 圖示顏色 */
+}
+
+.ledger-name-cell .ledger-name-actual {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary); /* 帳本名稱顏色 */
+}
+
+.ledger-data-cell-header,
+.ledger-data-cell,
+.ledger-data-cell-footer {
+    justify-content: flex-end; /* 數據靠右 */
+    text-align: right; /* 數據靠右 */
+    white-space: nowrap;
+}
+
+#noLedgerReportDataMessageHome {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-secondary);
+    background-color: var(--neutral-100); /* 使用 CSS 變數 */
+    border-radius: 6px;
+}
+#homeLedgerSummaryTitle { /* 已在 .page-section-title-sm 中定義 */
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    margin-top: 0.75rem;
+    color: var(--text-primary); /* 標題顏色 */
+    text-align: left; /* 靠左對齊 */
+    padding-left: 0.5rem; /* 左邊留白 */
+}
+
+/* 下拉選單項目中的刪除圖示 */
+.ledger-dropdown-item .delete-ledger-icon {
+    font-size: 0.9rem;
+    color: var(--danger); /* 使用 CSS 變數 */
+    margin-left: auto;
+    padding: 0.2rem 0.4rem;
+    cursor: pointer;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    border-radius: 4px; /* 圓角 */
+}
+.ledger-dropdown-item .delete-ledger-icon:hover {
+    opacity: 1;
+    background-color: rgba(var(--danger-rgb, 239, 68, 68), 0.1); /* 假設有 --danger-rgb */
+}
+
+.ledger-dropdown-item:hover .delete-ledger-icon {
+    visibility: visible;
+    opacity: 0.7;
+}
+
+.ledger-dropdown-item .item-content {
+    flex-grow: 1;
+}
+
+/* 刪除 Modal */
+#deleteLedgerModal .modal-header {
+    border-bottom: none;
+    background-color: var(--danger); /* Header 背景色 */
+    color: white; /* Header 文字顏色 */
+}
+#deleteLedgerModal .btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%); /* 確保關閉按鈕可見 */
+}
+#ledgerNameToDelete, #ledgerNameToConfirm {
+    word-break: break-all;
+}
+
+
+#ledgerListContainerInModal {
+    padding: 0; /* 移除 modal-body 的預設 padding，由列表項自行控制 */
+}
+
+.ledger-modal-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* 讓內容和刪除圖示分開 */
+    padding: 0.75rem 1.25rem; /* 列表項的 padding */
+    border-bottom: 1px solid var(--neutral-200);
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.ledger-modal-item:last-child {
+    border-bottom: none;
+}
+
+.ledger-modal-item:hover {
+    background-color: var(--neutral-100);
+}
+
+.ledger-modal-item.active { /* 當前選中的帳本 */
+    background-color: rgba(var(--primary-rgb, 59, 130, 246), 0.1);
+    font-weight: 500; /* 可選：加粗 */
+}
+.ledger-modal-item.active .item-content .item-name,
+.ledger-modal-item.active .item-content .item-icon {
+    color: var(--primary);
+}
+
+
+.ledger-modal-item .item-content {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* 圖示和名稱之間的間距 */
+    flex-grow: 1; /* 佔據主要空間 */
+    overflow: hidden;
+}
+
+.ledger-modal-item .item-icon {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    width: 24px; /* 固定寬度以便對齊 */
+    text-align: center;
+}
+
+.ledger-modal-item .item-name {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Modal 內的刪除圖示樣式 (與之前下拉選單的類似) */
+.ledger-modal-item .delete-ledger-icon {
+    font-size: 1rem;
+    color: var(--bs-danger);
+    padding: 0.3rem 0.5rem;
+    margin-left: 10px; /* 與帳本名稱的間距 */
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    opacity: 0.6; /* 預設稍微透明 */
+}
+
+.ledger-modal-item:hover .delete-ledger-icon {
+    opacity: 1; /* 滑鼠移到整個項目上時完全顯示 */
+}
+
+.ledger-modal-item .delete-ledger-icon:hover {
+    background-color: rgba(var(--bs-danger-rgb, 220, 53, 69), 0.1); /* 紅色背景回饋 */
+}
+
+/* Modal Footer 中的按鈕 */
+#ledgerSelectModal .modal-footer {
+    border-top: 1px solid var(--neutral-200);
+    padding: 0.75rem;
+}
+
+/* style-main.css */
+.ledger-group-header {
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--neutral-200); /* 在組標題上方加分隔線 */
+    margin-top: 0.5rem;
+}
+.ledger-group-header:first-of-type { /* 第一個組標題不需要上邊距和頂部分隔線 */
+    margin-top: 0;
+    border-top: none;
+}
+
+.ledger-modal-item .item-icon,
+.ledger-modal-item .delete-ledger-icon {
+    flex-shrink: 0; /* 防止圖示被壓縮 */
+}
+
+#sharedLedgerInviteCodeContainer {
+  display: inline-block; /* 或者 block，但 inline-block 更常用於這種情況 */
+  margin-left: auto;
+  /* 或者，如果父元素沒有設定 text-align */
+}
+
+
+/* --- 分帳建議容器整體美化 --- */
+#splitSuggestionContainer {
+    background-color: var(--card-bg, #ffffff); /* 使用卡片背景色，保持一致性 */
+    border: 1px solid rgba(0, 0, 0, 0.08); /* 更細緻的邊框 */
+    border-radius: 8px; /* 圓角與其他卡片一致 */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* 細微的陰影增加層次感 */
+    margin-top: 2rem; /* 與上方元素的間距 */
+    padding: 3px;    /* 內邊距調整 */
+    /* display: none; /* 初始隱藏，由 JS 控制顯示 */
+}
+
+/* 分帳建議容器內的標題 (例如 "共享帳本分帳建議") */
+#splitSuggestionContainer h5 {
+    color: var(--primary, #4a90e2); /* 使用主題色 */
+    font-weight: 500;
+    margin-bottom: 3px; /* 調整與下方內容的間距 */
+    padding-bottom: 3px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* 標題下方細分隔線 */
+}
+
+/* 分帳建議容器內的小標題 (例如 "成員結餘") */
+#splitSuggestionContainer h6 {
+    color: var(--text-secondary, #666666);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-top: 3px;
+    margin-bottom: 5px;
+}
+
+/* 分帳建議容器內的說明文字 (例如 "期間總共享支出") */
+#splitSuggestionContainer .small.text-muted {
+    font-size: 0.85rem; /* 調整字體大小 */
+    font-weight: 600;
+    margin-bottom: 1px;
+}
+
+/* 分帳建議列表 (ul) */
+#splitSuggestionContainer .list-group {
+    margin-bottom: 3px; /* 列表與下方元素的間距 */
+    font-weight: 600;
+}
+
+/* 分帳建議列表項 (li) */
+#splitSuggestionContainer .list-group-item {
+    background-color: transparent; /* 使列表項背景透明，繼承容器背景 */
+    border-color: rgba(0, 0, 0, 0.05); /* 列表項分隔線顏色 */
+    padding: 3px 0px; /* 調整列表項內邊距 (左右設為0，因為已有容器padding) */
+    font-size: 0.9rem;
+}
+
+/* 成員結餘列表項中的金額特別強調 */
+#splitSuggestionContainer .list-group-item .fw-bold {
+    font-size: 0.95rem; /* 金額字體稍大一點 */
+}
+
+/* --- 圖表容器的美化 --- */
+#splitSuggestionContainer .chart-container {
+    background-color: rgba(0, 0, 0, 0.02); /* 給圖表一個非常淡的背景以區分 */
+    border-radius: 6px;
+    padding: 3px;
+    margin-top: 2rem; /* 圖表與上方文字建議的間距 */
+    max-height: 350px; /* 增加一點最大高度 */
+    /* height: auto;  由 Chart.js 或 JS 控制 */
+    position: relative; /* Chart.js 需要 */
+}
+
+/* 如果圖表容器內有 "無數據" 的提示文字 */
+#splitSuggestionContainer .chart-container .no-data-message, /* 假設你可能會用這個 class */
+#splitSuggestionContainer .chart-container canvas + p { /* 或者 canvas 後面的 p 標籤 */
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 3px;
+    font-style: italic;
+}
+
+/* --- 可選：針對特定建議文字的樣式 --- */
+#splitSuggestionContainer .suggestion-item { /* 如果你給每個支付建議 li 添加 class */
+    /* 可以添加一些左右 padding 或 icon */
+}
+
+#splitSuggestionContainer .suggestion-item .debtor {
+    color: var(--danger); /* 欠款人名稱顏色 */
+}
+
+#splitSuggestionContainer .suggestion-item .creditor {
+    color: var(--success); /* 收款人名稱顏色 */
+}
+
+
+/* --- 圖表與表格結合佈局 --- */
+.chart-title-above-layout {
+    color: var(--text-primary);
+    font-weight: 500;
+    margin-bottom: 15px;
+}
+
+.chart-table-layout {
+    display: flex;
+    flex-wrap: wrap; /* 在小螢幕上允許換行 */
+    gap: 20px;       /* 圖表和表格之間的間距 */
+    align-items: flex-start; /* 頂部對齊 */
+}
+
+.chart-pie-container {
+    flex: 1 1 300px; /* 圖表容器：彈性放大，基礎寬度300px */
+    min-width: 280px; /* 最小寬度，避免過度壓縮 */
+    max-width: 400px; /* 最大寬度，避免圖表過大 */
+    height: auto;     /* 高度自適應 */
+    position: relative; /* Chart.js 需要 */
+}
+
+.chart-pie-container canvas { /* 確保 canvas 填滿其容器 */
+    max-width: 100%;
+    max-height: 300px; /* 限制圓餅圖的最大高度 */
+}
+
+
+.chart-table-container {
+    flex: 1 1 320px; /* 表格容器：彈性放大，基礎寬度320px */
+    min-width: 300px;
+    max-height: 320px; /* 限制表格區域最大高度，超出可滾動 */
+    overflow-y: auto;  /* 如果內容超出則顯示滾動條 */
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    background-color: rgba(0,0,0,0.015); /* 非常淡的背景 */
+}
+
+.distribution-table {
+    width: 100%;
+    font-size: 0.85rem; /* 表格字體大小 */
+}
+
+.distribution-table th {
+    background-color: rgba(0, 0, 0, 0.03);
+    font-weight: 500;
+    padding: 8px 10px;
+    white-space: nowrap; /* 防止表頭換行 */
+}
+
+.distribution-table td {
+    padding: 8px 10px;
+    vertical-align: middle;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+.distribution-table tbody tr:last-child td {
+    border-bottom: none; /* 移除最後一行的底部邊框 */
+}
+
+.distribution-table .text-end { /* Bootstrap class，確保生效 */
+    text-align: right !important;
+}
+
+/* 表格中金額和占比的顏色 (可選) */
+.distribution-table .amount-column {
+    font-weight: 500;
+}
+.distribution-table .percentage-column {
+    color: var(--text-secondary);
+}
+
+/* 小螢幕上的調整 */
+@media (max-width: 768px) {
+    .chart-table-layout {
+        flex-direction: column; /* 垂直堆疊 */
+        align-items: center;   /* 居中對齊 */
+        gap: 15px;
+    }
+
+    .chart-pie-container {
+        max-width: 100%; /* 圖表佔滿寬度 */
+        flex-basis: auto; /* 重置基礎寬度 */
+        height: 250px; /* 在堆疊時給圖表一個固定高度 */
+    }
+    .chart-pie-container canvas {
+        max-height: 250px;
+    }
+
+    .chart-table-container {
+        width: 100%;      /* 表格佔滿寬度 */
+        flex-basis: auto; /* 重置基礎寬度 */
+        max-height: 280px; /* 調整最大高度 */
+    }
+}

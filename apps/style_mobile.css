@@ -1,0 +1,432 @@
+/* style-mobile.css */
+@media (max-width: 768px) {
+    body {
+        padding-bottom: calc(60px + env(safe-area-inset-bottom)); /* 底部導航變矮，這裡也調整 */
+        padding-top: 130px;
+        padding-bottom: 100px;
+        font-size: 15px; /* 可選：略微調整基礎字體 */
+    }
+    .card-container, .table-container, .stock-container, .post-input-container, .post-card, .ai-assistant-container {
+        padding: 0.4rem; /* 例如 12px，減少卡片內邊距 */
+        margin-bottom: 0.5rem; /* 減少卡片間距 */
+        /* border-radius: 10px; */
+    }
+
+    .record-card {
+        padding: 0.2rem 0.8rem; /* 調整記錄卡片 padding */
+    }
+
+    /* --- Header Optimization --- */
+    header.header-container {
+        position: fixed; /* 將元素的位置固定 */
+        top: 0;          /* 固定在頂部 */
+        left: 0;         /* 從左邊開始，確保它橫跨整個寬度 */
+        width: 100%;     /* 讓 header 的寬度為螢幕的 100% */
+        z-index: 1000;   /* 確保 header 在其他內容之上，避免被覆蓋 */
+                        /* 數字越大，層級越高 */
+
+        /* 建議設定背景色，否則下方滾動的內容可能會透出來 */
+        background-color: white; /* 或者你 header 原本的背景色 */
+        padding: 28px 0px 12px 12px;
+        gap: 3px;
+    }
+
+    #pageTitle {
+        font-size: 1.25rem; /* 例如 20px */
+    }
+
+    .header-username {
+        font-size: 0.8rem;
+    }
+
+    #logoutButton {
+        padding: 3px 25px;
+        margin-right: 1rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .ledger-switch-btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+        max-width: 150px;
+    }
+    .ledger-switch-btn #currentLedgerIcon {
+        margin-right: 4px;
+        font-size: 0.9rem;
+    }
+    #ledgerSwitchMenu { /* Bootstrap Modal, 通常已響應式 */
+        min-width: 200px;
+    }
+    #ledgerSwitchMenu .dropdown-item {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+    }
+
+    /* --- Navigation Bar (Footer) --- */
+    footer.nav-bar {
+        min-height: 60px;
+        height: auto; /* 讓內容決定高度 */
+        padding: 5px 0; /* 上下 padding */
+    }
+
+    .nav-button {
+        padding: 6px; /* 調整按鈕內部 padding */
+        flex-grow: 1; /* 讓按鈕均分寬度 */
+    }
+
+    .nav-button svg {
+        width: 20px;
+        height: 20px;
+        margin-bottom: 1px;
+    }
+
+    .nav-button span {
+        font-size: 0.7rem; /* 例如 11px */
+        white-space: nowrap;
+    }
+
+    /* --- Card Layouts --- */
+    .stock-container, .record-card-container {
+        grid-template-columns: 1fr; /* 確保單欄 */
+        gap: 5px; /* 減小卡片間的垂直間距 */
+    }
+    .posts-container { /* 如果之前不是單欄 */
+        grid-template-columns: 1fr;
+        gap: 0.75rem; /* 調整貼文間距 */
+    }
+
+
+    /* --- Form Elements --- */
+    #accountForm, #assetForm,
+    #editRecordModal .modal-body form, /* 針對 Modal 內的表單 */
+    #editAssetModal .modal-body form,
+    #addLedgerModal .modal-body form {
+        padding: 8px; /* 表單內邊距 */
+    }
+
+    #accountForm .form-label, #assetForm .form-label,
+    #editRecordModal .form-label, #editAssetModal .form-label,
+    #addLedgerModal .form-label {
+        font-size: 0.875rem;
+        margin-bottom: 0.3rem;
+    }
+
+    #accountForm .form-control, #accountForm .form-select,
+    #assetForm .form-control, #assetForm .form-select,
+    #editRecordModal .form-control, #editRecordModal .form-select,
+    #editAssetModal .form-control, #editAssetModal .form-select,
+    #addLedgerModal .form-control, #addLedgerModal .form-select {
+        font-size: 0.9rem;
+        padding: 0.6rem 0.75rem; /* 調整 padding */
+        height: auto;
+        min-height: 40px; /* 確保最小點擊高度 */
+    }
+    /* 針對 #chargePage 的固定提交按鈕 */
+    .fixed-action-buttons {
+        bottom: calc(60px + 0.75rem + env(safe-area-inset-bottom)); /* 根據底部導航調整 */
+        padding: 0 1rem; /* 左右留白 */
+        left: 0;
+        right: 0;
+        transform: none; /* 移除 translateX */
+        width: auto; /* 讓內部按鈕決定寬度，或設為 100% */
+    }
+    .fixed-submit-btn {
+        width: 100%; /* 按鈕滿寬 */
+        padding: 0.85rem; /* 調整按鈕 padding */
+        font-size: 1rem;
+        border-radius: 8px;
+    }
+
+    /* Modal 內的提交按鈕 */
+    .modal-footer {
+        display: flex;
+        flex-direction: column-reverse; /* "確認"按鈕在下方 */
+        padding: 0.75rem; /* Modal footer padding */
+    }
+    .modal-footer .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    .modal-footer .btn:last-child {
+        margin-bottom: 0;
+    }
+    #postModal .modal-actions .btn-custom.form-btn { /* 貼文Modal的發布按鈕 */
+        width: 100%;
+    }
+
+
+    /* --- Manage Page Specifics --- */
+    #managePage .option-container {
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+    #managePage .option-card {
+        padding: 0.6rem;
+        flex-grow: 1;
+    }
+    #managePage .option-card h3 {
+        font-size: 1rem; /* 減小字體 */
+        white-space: nowrap;
+    }
+
+    #dateRangeForm .btn-custom.form-btn {
+        font-size: 0.8rem;
+        padding: 0.6rem 2rem;
+    }
+    #dateRangeForm > .col-12.mt-3 {
+        text-align: center;
+    }
+
+    #datePickerContainer .form-label {
+        font-size: 0.75rem;
+    }
+    #datePickerContainer .form-control.datepicker {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.6rem;
+    }
+
+    #recordsSection .view-toggle-bar .control-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+    }
+
+    #stocksSection .control-bar.asset-bar {
+        /* flex-wrap: wrap; */
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    #stocksSection .control-bar.asset-bar .summary-amount {
+        font-size: 0.85rem;
+        width: 100%;
+        text-align: center;
+        margin-bottom: 0.25rem;
+        padding-right: 0;
+    }
+    #stocksSection .control-bar.asset-bar .control-btn {
+        /* flex-grow: 1; */
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+
+    .stock-list-header {
+        padding: 6px 8px;
+        grid-template-columns: minmax(80px, 1fr) 20% 25% 25%; /* 調整欄位給名稱更多空間 */
+        gap: 3px;
+    }
+    .header-label {
+        font-size: 0.7rem; /* 減小表頭字體 */
+    }
+    .stock-card-content.single-row {
+        padding: 8px 3px;
+        grid-template-columns: minmax(80px, 1fr) 20% 25% 25%; /* 與表頭一致 */
+        gap: 3px;
+    }
+    .sc-item-name, .sc-quantity, .sc-current-value, .sc-profit-loss {
+        font-size: 0.8rem;
+    }
+    .sc-profit-loss {
+        font-size: 0.75rem;
+    }
+    .sc-profit-loss .arrow {
+        font-size: 0.8rem;
+    }
+    .stock-actions {
+        padding: 6px 8px; /* 調整操作按鈕區域 padding */
+    }
+    .stock-actions .btn-buy, .stock-actions .btn-sell {
+        padding: 4px 8px; /* 調整買賣按鈕大小 */
+        font-size: 0.7rem;
+    }
+
+    /* --- Chart Optimization --- */
+    #assetChartContainer, #expenseChartContainer, /* Home */
+    .chart-container /* Manage Page */ {
+        height: auto; /* 減小圖表高度 */
+        max-width: 100%;
+    }
+    #expenseCategoryChart, #expenseTrendsChart,
+    #assetChart, #expenseChart {
+        height: auto; /* 減小圖表高度 */
+        max-width: 100%;
+    }
+
+    /* --- Share Page (Posts) --- */
+    .post-input-container {
+        padding: 0.6rem;
+    }
+    .post-input-header .user-avatar {
+        width: 32px;
+        height: 32px;
+    }
+    .post-input {
+        font-size: 0.85rem; /* 減小輸入框字體 */
+        padding: 0.5rem 0.75rem;
+    }
+
+    #postModal .modal-content {
+        padding: 1rem;
+        max-height: 85vh; /* 增加 Modal 最大高度 */
+    }
+    #postModal .post-form-user .user-avatar {
+        width: 36px;
+        height: 36px;
+    }
+    #postModal .post-textarea {
+        font-size: 0.95rem;
+        min-height: 70px;
+    }
+    #postModal .image-preview-container {
+        max-height: 100px;
+    }
+    #postModal .image-preview-item {
+        width: 60px;
+        height: 60px;
+    }
+
+    .post-card {
+        padding: 0.6rem;
+    }
+    .post-header .user-avatar {
+        width: 32px;
+        height: 32px;
+    }
+    .post-user {
+        font-size: 0.85rem;
+    }
+    .post-time, .post-list {
+        font-size: 0.65rem; /* 更小的輔助文字 */
+    }
+    .post-content {
+        font-size: 0.85rem;
+        line-height: 1.45;
+    }
+    .post-images-container.carousel {
+        height: 200px; /* 輪播圖高度 */
+    }
+    .reaction-btn {
+        font-size: 0.75rem;
+        padding: 3px 5px;
+    }
+    .reaction-btn svg {
+        width: 12px;
+        height: 12px;
+    }
+
+    /* --- Table Responsiveness --- */
+    /* 帳本列表 (Home Page) - 已有 sm 和 xs 斷點調整 */
+    /* 消費佔比表格 (Manage Page) */
+    .category-table-container {
+        margin-top: 1rem;
+    }
+    .category-table th, .category-table td {
+        padding: 5px 3px; /* 進一步減小 padding */
+        font-size: 0.75rem; /* 進一步減小字體 */
+        white-space: nowrap;
+    }
+    .category-table th:first-child, .category-table td:first-child {
+        white-space: normal; /* 允許類別換行 */
+        min-width: 70px;
+    }
+
+    /* --- Modal Content for various modals --- */
+    .modal-dialog { /* Bootstrap Modal Dialog */
+        margin: 0.5rem; /* 確保 Modal 不會緊貼螢幕邊緣 */
+    }
+    #loginModalBs .modal-content,
+    #registerModalBs .modal-content,
+    #editRecordModal .modal-content,
+    #editAssetModal .modal-content,
+    #addLedgerModal .modal-content,
+    #deleteLedgerModal .modal-content {
+        max-height: 90vh; /* 限制 Modal 最大高度 */
+    }
+    .modal-title {
+        font-size: 1.1rem; /* 調整 Modal 標題字體大小 */
+    }
+
+
+    /* 調整 #totalAssets 和 .net-assets-row 在手機上的顯示 */
+    #homePage #assetsContainer > .total-assets,
+    #homePage #assetsContainer > .net-assets-row {
+      max-width: 100%; /* 手機上佔滿寬度 */
+      margin-left: 0; /* 移除自動 margin 以佔滿 */
+      margin-right: 0;
+    }
+    #homePage #assetsContainer > .net-assets-row {
+        margin-bottom: 2.5rem;
+    }
+    .total-assets .label, .asset-card .label { /* 這些是 .asset-card 內的，不是 total-assets */
+        font-size: 0.8rem;
+    }
+    .total-assets .value {
+        font-size: 1.8rem; /* 調整總資產金額大小 */
+    }
+    .net-assets-row .value {
+        font-size: 1rem; /* 調整淨資產等金額大小 */
+    }
+
+    /* 原始 styles.css 中的 @media (max-width: 768px) 的其他部分 */
+    /* 確保這些樣式與上面的優化建議不衝突，或被優化建議覆蓋 */
+    .table-container { padding: 3px; } /* 原始 */
+
+    /* 帳本首頁支出列表的 Grid 調整 */
+    #allLedgersMonthlyExpensesListHome .ledger-table-row {
+        grid-template-columns: minmax(60px, 1.2fr) repeat(3, minmax(60px, 1fr)); /* 稍微調整欄寬 */
+    }
+    #allLedgersMonthlyExpensesListHome .ledger-table-footer {
+        grid-template-columns: repeat(3, 1fr); /* 手機版表尾也平均分配 */
+    }
+    #allLedgersMonthlyExpensesListHome .ledger-table-cell {
+        padding: 0.5rem 0.3rem; /* 減少手機上的儲存格內距 */
+        font-size: 0.9rem;    /* 略微縮小字體 */
+    }
+    #allLedgersMonthlyExpensesListHome .ledger-name-cell .ledger-type-icon {
+        margin-left: 5px; /* 手機上可略微縮小圖示和文字間距 */
+        font-size: 0.9em; /* 手機上圖示可略小 */
+    }
+
+    /* 更小螢幕的進一步調整 (例如 575px 以下) */
+    @media (max-width: 575.98px) {
+        #allLedgersMonthlyExpensesListHome .ledger-table-row {
+            grid-template-columns: minmax(70px, 1.2fr) repeat(3, minmax(50px, 1fr));
+        }
+        #allLedgersMonthlyExpensesListHome .ledger-table-cell {
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 0.4rem 0.2rem;
+        }
+        #allLedgersMonthlyExpensesListHome .ledger-table-footer {
+            display: flex; /* 在極小螢幕上，表尾可能用 flex 更好 */
+            justify-content: space-around; 
+            flex-wrap: wrap; /* 設定為自動換行 */
+        }
+        #allLedgersMonthlyExpensesListHome .ledger-table-footer .ledger-table-cell {
+            /* flex-basis: auto; */
+            padding: 1px 3px;
+            /* padding: 0.2rem 0.4rem;  */
+        }
+
+        .expense-amount-title{
+            margin-right: 1rem;
+        }
+    }
+
+    #splitSuggestionContainer {
+        padding: 3px;
+        margin-top: 2.5rem;
+    }
+
+    #splitSuggestionContainer h5 {
+        font-size: 1rem; /* 調整標題大小 */
+    }
+
+    #splitSuggestionContainer .chart-container {
+        padding: 8px;
+        max-height: 300px; /* 小螢幕可以再低一些 */
+    }
+
+    #splitSuggestionContainer .list-group-item {
+        font-size: 0.85rem;
+    }
+}
