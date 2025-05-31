@@ -1,4 +1,4 @@
-# timestamp: 2025-05-13 23:00:00
+# timestamp: 2025-05-26 21:05:00
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
@@ -794,7 +794,40 @@ def route_join_ledger():
     result = wallet.join_public_ledger(user_id = uid, inviteCode = invite_code, password = password) # 範例：直接獲取 client
     return jsonify(f'Join to {invite_code}'), 200
      
+@app.route('/api/stock/transaction', methods=['POST'])
+@firebase_token_required
+def handle_stock_transaction_route():
+    uid = g.uid
+    data = request.json
 
+    stock_name = data.get('stock_name')
+    action = data.get('action') # 'buy' or 'sell'
+    shares = data.get('shares')
+
+    if not all([stock_name, action, shares]):
+        return jsonify({"error": "缺少必要參數 (stock_name, action, shares)"}), 400
+    
+    try:
+        shares = int(shares)
+        if shares <= 0:
+            return jsonify({"error": "股數必須為正整數"}), 400
+    except ValueError:
+        return jsonify({"error": "股數格式錯誤"}), 400
+
+    if action not in ['buy', 'sell']:
+        return jsonify({"error": "無效的操作類型，只能是 'buy' 或 'sell'"}), 400
+
+    try:
+        success, message = wallet.handle_stock_transaction(uid, stock_name, action, shares)
+        if success:
+            return jsonify({"message": message}), 200
+        else:
+            return jsonify({"error": message}), 400 # 或 500，取決於錯誤類型
+    except Exception as e:
+        print(f"處理股票交易時發生錯誤 for UID {uid}, stock {stock_name}: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "伺服器內部錯誤"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, port=8080, host='0.0.0.0')

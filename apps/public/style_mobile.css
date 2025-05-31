@@ -1,19 +1,19 @@
 /* style-mobile.css */
 @media (max-width: 768px) {
     body {
-        padding-bottom: calc(60px + env(safe-area-inset-bottom)); /* 底部導航變矮，這裡也調整 */
-        padding-top: 130px;
+        padding-bottom: calc(70px + env(safe-area-inset-bottom)); /* 底部導航變矮，這裡也調整 */
+        padding-top: env(safe-area-inset-top); /* 頂部留白 */
         padding-bottom: 100px;
-        font-size: 15px; /* 可選：略微調整基礎字體 */
+        font-size: 16px; /* 可選：略微調整基礎字體 */
     }
     .card-container, .table-container, .stock-container, .post-input-container, .post-card, .ai-assistant-container {
-        padding: 0.4rem; /* 例如 12px，減少卡片內邊距 */
+        padding: 0.8rem 0.4rem; /* 例如 12px，減少卡片內邊距 */
         margin-bottom: 0.5rem; /* 減少卡片間距 */
         /* border-radius: 10px; */
     }
 
     .record-card {
-        padding: 0.2rem 0.8rem; /* 調整記錄卡片 padding */
+        padding: 0.4rem 0.6rem; /* 調整記錄卡片 padding */
     }
 
     /* --- Header Optimization --- */
@@ -23,12 +23,15 @@
         left: 0;         /* 從左邊開始，確保它橫跨整個寬度 */
         width: 100%;     /* 讓 header 的寬度為螢幕的 100% */
         z-index: 1000;   /* 確保 header 在其他內容之上，避免被覆蓋 */
-                        /* 數字越大，層級越高 */
-
         /* 建議設定背景色，否則下方滾動的內容可能會透出來 */
         background-color: white; /* 或者你 header 原本的背景色 */
-        padding: 28px 0px 12px 12px;
-        gap: 3px;
+        padding: 1.5rem 0.25rem 1rem 1rem; /* 上下留白，左右留白 */
+        height: 115px;
+        gap: 2px;
+    }
+
+    .main-container {
+        padding-top: calc(115px + 3px); /* 頂部留白，讓內容不會被 header 遮住 */
     }
 
     #pageTitle {
@@ -59,8 +62,8 @@
         min-width: 200px;
     }
     #ledgerSwitchMenu .dropdown-item {
-        font-size: 0.85rem;
-        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+        padding: 0.6rem 0.8rem;
     }
 
     /* --- Navigation Bar (Footer) --- */
@@ -102,14 +105,14 @@
     #editRecordModal .modal-body form, /* 針對 Modal 內的表單 */
     #editAssetModal .modal-body form,
     #addLedgerModal .modal-body form {
-        padding: 8px; /* 表單內邊距 */
+        padding: 3px 8px; /* 表單內邊距 */
     }
 
     #accountForm .form-label, #assetForm .form-label,
     #editRecordModal .form-label, #editAssetModal .form-label,
     #addLedgerModal .form-label {
         font-size: 0.875rem;
-        margin-bottom: 0.3rem;
+        margin-bottom: 0.25rem;
     }
 
     #accountForm .form-control, #accountForm .form-select,
@@ -122,6 +125,7 @@
         height: auto;
         min-height: 40px; /* 確保最小點擊高度 */
     }
+
     /* 針對 #chargePage 的固定提交按鈕 */
     .fixed-action-buttons {
         bottom: calc(60px + 0.75rem + env(safe-area-inset-bottom)); /* 根據底部導航調整 */
@@ -218,24 +222,24 @@
         font-size: 0.7rem; /* 減小表頭字體 */
     }
     .stock-card-content.single-row {
-        padding: 8px 3px;
+        padding: 0.5rem 3px;
         grid-template-columns: minmax(80px, 1fr) 20% 25% 25%; /* 與表頭一致 */
         gap: 3px;
     }
     .sc-item-name, .sc-quantity, .sc-current-value, .sc-profit-loss {
-        font-size: 0.8rem;
+        font-size: 1rem;
     }
     .sc-profit-loss {
-        font-size: 0.75rem;
+        font-size: 0.9rem;
     }
     .sc-profit-loss .arrow {
         font-size: 0.8rem;
     }
     .stock-actions {
-        padding: 6px 8px; /* 調整操作按鈕區域 padding */
+        padding: 0.5rem 8px; /* 調整操作按鈕區域 padding */
     }
     .stock-actions .btn-buy, .stock-actions .btn-sell {
-        padding: 4px 8px; /* 調整買賣按鈕大小 */
+        padding: 0.2rem 8px; /* 調整買賣按鈕大小 */
         font-size: 0.7rem;
     }
 
@@ -339,7 +343,7 @@
     #editAssetModal .modal-content,
     #addLedgerModal .modal-content,
     #deleteLedgerModal .modal-content {
-        max-height: 90vh; /* 限制 Modal 最大高度 */
+        max-height: 100vh; /* 限制 Modal 最大高度 */
     }
     .modal-title {
         font-size: 1.1rem; /* 調整 Modal 標題字體大小 */
@@ -360,7 +364,7 @@
         font-size: 0.8rem;
     }
     .total-assets .value {
-        font-size: 1.8rem; /* 調整總資產金額大小 */
+        font-size: 1.5rem; /* 調整總資產金額大小 */
     }
     .net-assets-row .value {
         font-size: 1rem; /* 調整淨資產等金額大小 */
@@ -394,7 +398,7 @@
         #allLedgersMonthlyExpensesListHome .ledger-table-cell {
             font-size: 0.9rem;
             font-weight: 500;
-            padding: 0.4rem 0.2rem;
+            padding: 0.7rem 0.4rem;
         }
         #allLedgersMonthlyExpensesListHome .ledger-table-footer {
             display: flex; /* 在極小螢幕上，表尾可能用 flex 更好 */
@@ -403,7 +407,7 @@
         }
         #allLedgersMonthlyExpensesListHome .ledger-table-footer .ledger-table-cell {
             /* flex-basis: auto; */
-            padding: 1px 3px;
+            padding: 0.25rem 0.4rem;
             /* padding: 0.2rem 0.4rem;  */
         }
 

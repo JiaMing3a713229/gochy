@@ -1638,4 +1638,101 @@ class SmartMF:
             else:
                 print(f"錯誤：邀請碼 '{inviteCode}' 的密碼不正確。")
 
+
+    def handle_stock_transaction(self, user_id: str, stock_name: str, action: str, shares: int) -> tuple[bool, str]:
+        """
+        處理使用者買入或賣出股票的交易。
+
+        Args:
+            user_id: 使用者 UID。
+            stock_name: 股票名稱/代號。
+            action: 'buy' 或 'sell'。
+            shares: 交易股數。
+
+        Returns:
+            一個元組 (success: bool, message: str)。
+        """
+        assets_collection_path = self._get_assets_collection_path(user_id)
+        
+        # 1. 找到使用者的該股票資產
+        asset_doc_ref = None
+        asset_data = None
+        asset_id = None
+
+        docs = self.firestore_client.get_collection(assets_collection_path)
+        for doc_snapshot in docs:
+            data = doc_snapshot.to_dict()
+            if data.get("item") == stock_name and data.get("asset_type") in self.optionType.get("assetType", {}).get("assets", {}).get("fixed_assets", []) + ["股票", "ETF", "金融股", "美債"]: #確保是股票類資產
+                asset_data = data
+                asset_id = doc_snapshot.id
+                asset_doc_ref = self.firestore_client.db.collection(assets_collection_path).document(asset_id)
+                break
+        
+        if not asset_doc_ref or not asset_data:
+            return False, f"找不到名為 '{stock_name}' 的股票資產。"
+
+        # 2. 獲取股票當前價格
+        # 優先從 StockDB 獲取，如果沒有，再嘗試即時獲取（但StockDB應為主要來源）
+        current_price = None
+        stock_db_item = self.firestore_client.get_document(self._get_stock_collection_path(), stock_name)
+        if stock_db_item and stock_db_item.get("current_price") is not None:
+            current_price = float(stock_db_item["current_price"])
+        else:
+            # 作為備案，嘗試即時獲取，但不建議在高頻交易中使用
+            current_price_live = get_current_price(stock_name)
+            if current_price_live is not None:
+                current_price = float(current_price_live)
+            else:
+                 return False, f"無法獲取 '{stock_name}' 的當前價格。"
+        
+        if current_price is None or current_price <= 0: # 價格應為正數
+            return False, f"'{stock_name}' 的當前價格無效或無法獲取。"
+
+        # 3. 準備更新的數據
+        old_quantity = int(asset_data.get("quantity", 0))
+        old_acquisition_value = float(asset_data.get("acquisition_value", 0.0))
+        old_current_amount = float(asset_data.get("current_amount", 0.0)) # 使用 current_amount
+
+        transaction_value_change = shares * current_price
+        updated_fields = {}
+
+        if action == "buy":
+            updated_fields["quantity"] = old_quantity + shares
+            # 根據用戶要求：買入會將原本的 acquisition_value 和 current_amount 加上 (買入股數 * current_price)
+            updated_fields["acquisition_value"] = old_acquisition_value + transaction_value_change
+            updated_fields["current_amount"] = old_current_amount + transaction_value_change # 或 (old_quantity + shares) * current_price 
+            # 如果 current_amount 應該總是反映市值，則應為 (old_quantity + shares) * current_price
+            # 但按照用戶明確要求，是加上交易額
+        elif action == "sell":
+            if shares > old_quantity:
+                return False, f"賣出股數 ({shares}) 超過持有股數 ({old_quantity})。"
+            
+            new_quantity = old_quantity - shares
+            updated_fields["quantity"] = new_quantity
+            
+            # 根據用戶的買入邏輯對稱處理賣出
+            updated_fields["acquisition_value"] = old_acquisition_value - transaction_value_change
+            updated_fields["current_amount"] = old_current_amount - transaction_value_change # 或 new_quantity * current_price
+
+            if new_quantity == 0:
+                # 如果賣光，成本和當前金額應歸零
+                updated_fields["acquisition_value"] = 0.0
+                updated_fields["current_amount"] = 0.0
+            else:
+                # 確保賣出後金額不會變負（由於奇怪的成本計算方式）
+                if updated_fields["acquisition_value"] < 0: updated_fields["acquisition_value"] = 0
+                if updated_fields["current_amount"] < 0: updated_fields["current_amount"] = 0
+        else:
+            return False, "無效的操作類型。"
+
+        # 4. 更新 Firestore 中的文件
+        try:
+            asset_doc_ref.update(updated_fields)
+            # 可選：更新使用者總資產的摘要（如果有的話）或觸發相關的匯總更新
+            # self.update_overall_asset_summary(user_id) 
+            return True, f"股票 '{stock_name}' {action} {shares} 股操作成功。"
+        except Exception as e:
+            print(f"更新 Firestore 股票資產時發生錯誤 UID {user_id}, asset_id {asset_id}: {e}")
+            return False, "更新股票資料時發生錯誤。"
+
                 

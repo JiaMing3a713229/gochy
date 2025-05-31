@@ -1,7 +1,7 @@
 // scripts.js (完整版 - 整合 Firebase Authentication)
 
 // --- 全局變量 ---
-const version = 'v1.2.2_20250509'; // 版本號更新
+const version = 'v1.3.2_20250531'; // 版本號更新
 // REMOVED: var current_account = ''; // 不再需要，由 Firebase Auth 管理
 const initialLoad = 15;   // 初始載入記錄數量
 let currentPage = 1;      // 當前頁碼 (用於記錄列表)
@@ -80,6 +80,7 @@ let currentUser = null; // 當前登入的使用者物件 (Firebase Auth)
 
 let loginModalInstance = null;
 let registerModalInstance = null;
+let editStockModalInstance = null; 
 
 // --- 頁面加載後執行設定 ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -133,8 +134,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     // 呼叫後端 API 嘗試加入共享帳本
                     const result = await joinSharedLedgerAPI(inviteCode, password);
-
-                    if (result.success) {
+                    console.log('API 回應:', result);
+                    if (result) {
                         console.log('成功加入共享帳本:', result.data);
                         if (joinModalInstance) joinModalInstance.hide();
 
@@ -257,6 +258,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // console.log("Listener attached to saveAssetChangesBtn.");
     } else {
         console.warn("saveAssetChangesBtn not found during listener setup.");
+    }
+
+    // 初始化編輯股票 Modal
+    const editStockModalElement = document.getElementById('editStockModal');
+    if (editStockModalElement) {
+        editStockModalInstance = new bootstrap.Modal(editStockModalElement);
+    }
+
+    const saveStockChangesBtn = document.getElementById('saveStockChangesBtn');
+    if (saveStockChangesBtn) {
+        saveStockChangesBtn.addEventListener('click', handleEditStockSubmit);
     }
 
 });
@@ -3075,15 +3087,15 @@ function renderStockCards(stockDatas, container) {
                     </span>
                 </div>
                 <div class="stock-actions">
-                    <button class="btn-buy" onclick="buyStock('${stockData.item}', event)">買入</button>
-                    <button class="btn-sell" onclick="sellStock('${stockData.item}', ${quantity}, event)">賣出</button>
+                    <button class="btn-edit" onclick="openEditStockModal('${stockData.item}', event)">編輯</button>
+                    <button class="btn-sell" onclick="delStock('${stockData.item}', ${quantity}, event)">移除</button>
                 </div>
             `;
 
             // 添加卡片點擊展開/收起操作按鈕的事件監聽器
             card.addEventListener('click', (e) => {
                 // 避免點擊按鈕時觸發卡片效果
-                if (e.target.closest('.btn-buy') || e.target.closest('.btn-sell')) {
+                if (e.target.closest('.btn-edit') || e.target.closest('.btn-sell')) {
                     return;
                 }
                 card.classList.toggle('active'); // 切換 active class
@@ -3332,7 +3344,7 @@ function renderAssetCards(assetDatas, container) {
 
     assetDatas.forEach(assetData => {
         // 根據你的邏輯決定是否顯示 (例如 acquisition_value > 0)
-        if (assetData.current_amount >= 0) { // 允許 0 元資產? 或 > 0
+        if (assetData.current_amount > 0) { // 允許 0 元資產? 或 > 0
             totalValue += parseFloat(assetData.current_amount || 0); // 累加總價值
 
             const card = document.createElement('div');
@@ -5796,6 +5808,186 @@ function renderMemberBalancesChart(balances, memberNames) {
         }
     });
     console.log("Member balances chart rendered.");
+}
+
+
+/**
+ * 處理加入共享帳本的請求。
+ * @param {string} inviteCode - 使用者輸入的共享帳本邀請碼。
+ * @param {string} [password=""] - 使用者輸入的密碼 (可選，如果帳本需要)。
+ * @returns {Promise<boolean>} 返回一個 Promise，解析為 true 表示成功加入，false 表示失敗。
+ */
+async function joinSharedLedgerAPI(inviteCode, password = "") {
+    const user = auth.currentUser;
+    if (!user) {
+        alert('請先登入才能加入共享帳本！');
+        showLoginModalBs(); // 假設這是你的登入 Modal 顯示函式
+        return false;
+    }
+
+    if (!inviteCode || inviteCode.trim() === "") {
+        alert('請輸入有效的共享帳本邀請碼。');
+        return false;
+    }
+
+    console.log(`Attempting to join shared ledger with code: ${inviteCode}`);
+    // 可以添加一個載入指示器 (Spinner)
+
+    try {
+        const payload = {
+            inviteCode: inviteCode.trim(),
+            password: password // 即使是空字串也傳遞，後端會處理
+        };
+
+        const response = await fetchWithAuth(`${API_BASE_URL}/ledger/join`, { // 確認 API_BASE_URL 正確
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // fetchWithAuth 會自動加入 Authorization Bearer token
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json(); // 嘗試解析後端回應
+
+        if (!response.ok) {
+            // 後端應該返回一個包含 error 訊息的 JSON
+            console.error("加入共享帳本失敗 (API):", result.error || `HTTP Status ${response.status}`);
+            alert(`加入共享帳本失敗：${result.message || result.error || '未知錯誤，請稍後再試。'}`);
+            return false;
+        }
+
+        // --- 加入成功 ---
+        console.log("成功加入共享帳本:", result); // 後端可以返回成功訊息或新的帳本資訊
+        alert(result.message || `成功加入帳本 "${inviteCode}"！`); // 使用後端返回的訊息
+
+        // 刷新帳本列表，以便新的共享帳本出現在下拉選單中
+        await loadUserLedgers();
+
+        // 可選：自動切換到新加入的共享帳本 (如果後端返回了帳本名稱等詳細資訊)
+        // 例如，如果 result 包含 { id: newLedgerId, name: newLedgerName, type: 'shared' }
+        // if (result.id && result.name) {
+        //     currentLedger = { id: result.id, name: result.name, type: 'shared' };
+        //     updateLedgerButtonDisplay(currentLedger.name, currentLedger.type);
+        //     // 高亮下拉選單中的新帳本
+        //     const menu = document.getElementById('ledgerSwitchMenu');
+        //     menu?.querySelectorAll('.dropdown-item.active').forEach(item => item.classList.remove('active'));
+        //     menu?.querySelector(`.ledger-dropdown-item[data-ledger-id="${currentLedger.id}"][data-ledger-type="shared"]`)?.classList.add('active');
+        //     handleHashChange(auth.currentUser); // 刷新當前頁面數據
+        // }
+
+
+        // 關閉加入帳本的 Modal (假設你有一個)
+        // closeJoinLedgerModal(); // 你需要實現這個函式
+
+        return true;
+
+    } catch (error) {
+        console.error('加入共享帳本時發生前端錯誤:', error);
+        alert(`加入共享帳本時發生錯誤：${error.message}`);
+        return false;
+    } finally {
+        // 移除載入指示器
+    }
+}
+
+
+/**
+ * 開啟編輯股票 Modal，並設定股票名稱。
+ * @param {string} stockItemName - 要編輯的股票名稱。
+ * @param {Event} event - 事件物件。
+ */
+function openEditStockModal(stockItemName, event) {
+    if (event) {
+        event.stopPropagation(); // 防止觸發卡片點擊事件
+    }
+    console.log("Opening edit stock modal for:", stockItemName);
+
+    document.getElementById('editStockItemNameDisplay').textContent = stockItemName;
+    document.getElementById('editStockItemNameHidden').value = stockItemName; // 儲存以供提交
+    document.getElementById('editStockShares').value = ''; // 清空股數
+    document.getElementById('editStockError').style.display = 'none'; // 隱藏錯誤訊息
+    document.getElementById('stockActionBuy').checked = true; // 預設選中買入
+
+    if (editStockModalInstance) {
+        editStockModalInstance.show();
+    } else {
+        console.error("Edit Stock Modal instance not found.");
+    }
+}
+
+
+
+/**
+ * 處理編輯股票 Modal 的表單提交。
+ */
+async function handleEditStockSubmit() {
+    const stockName = document.getElementById('editStockItemNameHidden').value;
+    const sharesInput = document.getElementById('editStockShares');
+    const shares = parseInt(sharesInput.value, 10);
+    const action = document.querySelector('input[name="stockAction"]:checked').value;
+    const errorDiv = document.getElementById('editStockError');
+    const saveButton = document.getElementById('saveStockChangesBtn');
+
+    errorDiv.style.display = 'none';
+
+    if (!stockName) {
+        errorDiv.textContent = '錯誤：未指定股票名稱。';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    if (isNaN(shares) || shares <= 0) {
+        sharesInput.classList.add('is-invalid');
+        errorDiv.textContent = '請輸入有效的正整數股數。';
+        errorDiv.style.display = 'block';
+        return;
+    } else {
+        sharesInput.classList.remove('is-invalid');
+    }
+
+    saveButton.disabled = true;
+    saveButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 處理中...';
+
+    try {
+        const payload = {
+            stock_name: stockName,
+            action: action, // 'buy' or 'sell'
+            shares: shares
+        };
+
+        const response = await fetchWithAuth(`${API_BASE_URL}/stock/transaction`, { // 新的 API 端點
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || `操作失敗 (${response.status})`);
+        }
+
+        alert('股票操作成功！');
+        if (editStockModalInstance) {
+            editStockModalInstance.hide();
+        }
+        // 刷新股票列表
+        if (typeof renderStockCardsForAccount === 'function' && domCache.stocksDataView.style.display === 'block') {
+            await renderStockCardsForAccount();
+        }
+        // 也可能需要刷新總資產等首頁資訊
+        if (window.location.hash.includes('homePage') || typeof updateHomePage === 'function') {
+            await updateHomePage();
+        }
+
+
+    } catch (error) {
+        console.error('股票操作失敗:', error);
+        errorDiv.textContent = error.message;
+        errorDiv.style.display = 'block';
+    } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = '確認';
+    }
 }
 
 

@@ -64,7 +64,7 @@ header.hidden {
 .header-dropdown {
     width: 130px;
     max-width: 100%;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     color: var(--text-secondary);
     padding: 4px;
     text-align: center;
@@ -165,7 +165,7 @@ header.hidden {
 
 .record-actions {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     justify-content: flex-end; /* 按鈕靠右 */
     align-items: center;
     opacity: 0;
@@ -203,7 +203,7 @@ header.hidden {
     transform: translateY(-2px);
 }
 
-.btn-buy {
+.btn-edit {
     background: var(--success, #28a745); /* (來自上次建議，增加預設顏色) */
     color: white;
     padding: 6px 14px; /* (來自上次建議) */
@@ -216,11 +216,11 @@ header.hidden {
     cursor: pointer; /* (來自上次建議) */
 }
 
-.btn-buy:hover {
+.btn-edit:hover {
     background: #218838; /* (來自上次建議) */
     transform: translateY(-1px); /* 原始效果，可與上次建議的 :active 效果結合 */
 }
-.btn-buy:active { /* (來自上次建議) */
+.btn-edit:active { /* (來自上次建議) */
     transform: scale(0.95);
 }
 
@@ -1857,7 +1857,8 @@ header.header-container { /* 頂部 Header (來自上次建議) */
 }
 .ledger-table-header .ledger-table-cell {
     font-weight: 500; /* 調整字重 */
-    color: var(--text-secondary); /* 調整顏色 */
+    /* color: var(--text-secondary); 調整顏色 */
+    color:white;
     font-size: 0.85rem; /* 調整字體大小 */
 }
 
@@ -1878,6 +1879,12 @@ header.header-container { /* 頂部 Header (來自上次建議) */
     align-items: center;
     overflow: hidden;
     font-size: 0.9rem; /* 內容字體 */
+}
+
+
+.ledger-data-cell-header,
+.ledger-name-column-header{
+    background-color: var(--info);
 }
 
 .ledger-name-column-header,

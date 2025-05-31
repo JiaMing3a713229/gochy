@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="style_main.css">
     <link rel="stylesheet" href="style_mobile.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <!-- <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" rel="stylesheet"> -->
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
 </head>
@@ -58,14 +58,12 @@
                         <div id="homeLedgerSummaryTableHeaderContainer"></div>
 
                         <div id="allLedgersMonthlyExpensesLoadingHome" style="display: none;">...</div>
-                        <div id="allLedgersMonthlyExpensesListHome">
-                            </div>
+                        <div id="allLedgersMonthlyExpensesListHome"></div>
                         <p id="noLedgerReportDataMessageHome" style="display: none;">...</p>
                     
                         <div id="allLedgersMonthlyExpensesLoadingHome" class="text-center my-2" style="display: none;">
                             </div>
-                        <div id="allLedgersMonthlyExpensesListHome"> 
-                            </div>
+                        <!-- <div id="allLedgersMonthlyExpensesListHome"> </div> -->
                         <p id="noLedgerReportDataMessageHome" class="text-center text-secondary small mt-3" style="display: none;">
                             本月份無帳本支出資料。
                         </p>
@@ -866,8 +864,46 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js" defer></script> 
+    <div class="modal fade" id="editStockModal" tabindex="-1" aria-labelledby="editStockModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editStockModalLabel">編輯持股</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editStockForm">
+                        <input type="hidden" id="editStockItemNameHidden">
+                        <h6 class="mb-3">股票名稱: <span id="editStockItemNameDisplay">N/A</span></h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">操作類型:</label>
+                            <div>
+                                <input type="radio" class="btn-check" name="stockAction" id="stockActionBuy" value="buy" autocomplete="off" checked>
+                                <label class="btn btn-outline-success" for="stockActionBuy">買入</label>
+                                
+                                <input type="radio" class="btn-check" name="stockAction" id="stockActionSell" value="sell" autocomplete="off">
+                                <label class="btn btn-outline-danger" for="stockActionSell">賣出</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editStockShares" class="form-label">股數:</label>
+                            <input type="number" class="form-control" id="editStockShares" min="1" required>
+                        </div>
+                        <div id="editStockError" class="alert alert-danger mt-2" style="display: none;"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveStockChangesBtn">確認</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js" defer></script>  -->
 
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
