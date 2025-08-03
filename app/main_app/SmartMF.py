@@ -9,50 +9,242 @@ from lxml import html
 import random # 用於產生隨機邀請碼
 import string # 用於產生隨機邀請碼
 
-def get_current_price(item: str) -> int:
+# def get_current_price(item: str) -> int:
+#     """
+#     獲取股票當前價格，支持 TW 和 TWO 市場
+
+#     Args:
+#         item: 股票代碼
+
+#     Returns:
+#         float 或 None: 當前價格或無法獲取時返回 None
+#     """
+#     # 定義可能的市場後綴
+#     market_suffixes = ['.TW', '.TWO']
+
+#     # 添加 User-Agent 模擬瀏覽器
+#     headers = {
+#         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+#     }
+
+#     for suffix in market_suffixes:
+#         url = f"https://finance.yahoo.com/quote/{item}{suffix}"
+        
+#         try:
+#             # 發送 HTTP 請求 
+#             response = requests.get(url, headers=headers, timeout=10)
+#             response.raise_for_status()  # 如果狀態碼不是 200，會拋出異常
+            
+#             # 解析 HTML
+#             tree = html.fromstring(response.content)
+            
+#             # 使用更穩健的 XPath（Yahoo Finance 可能會改變結構）
+#             price_xpath = '/html/body/div[2]/main/section/section/section/article/section[1]/div[2]/div[1]/section/div/section/div[1]/div[1]/span[1]/text()'
+#             price_elements = tree.xpath(price_xpath)
+            
+#             if price_elements:
+#                 current_price = float(price_elements[0].replace(",", ""))
+#                 print(f"{item}{suffix} 的當前價格: {current_price}")
+#                 return float(current_price)
+                
+#         except requests.RequestException as e:
+#             print(f"無法訪問 {url}，錯誤: {str(e)}")
+#             continue
+
+#     print(f"找不到 {item} 的價格，可能不在 TW 或 TWO 市場")
+#     return None
+import yfinance as yf
+
+def get_current_price(item: str) -> Optional[float]:
     """
-    獲取股票當前價格，支持 TW 和 TWO 市場
+    快速獲取股票當前價格
 
     Args:
         item: 股票代碼
 
     Returns:
-        float 或 None: 當前價格或無法獲取時返回 None
+        Optional[float]: 當前價格或無法獲取時返回 None
     """
-    # 定義可能的市場後綴
+    # 台灣市場後綴
     market_suffixes = ['.TW', '.TWO']
-
-    # 添加 User-Agent 模擬瀏覽器
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    }
-
+    
     for suffix in market_suffixes:
-        url = f"https://finance.yahoo.com/quote/{item}{suffix}"
+        symbol = f"{item}{suffix}"
         
         try:
-            # 發送 HTTP 請求 
-            response = requests.get(url, headers=headers, timeout=10)
-            response.raise_for_status()  # 如果狀態碼不是 200，會拋出異常
+            # 創建股票對象並快速獲取資訊
+            stock = yf.Ticker(symbol)
             
-            # 解析 HTML
-            tree = html.fromstring(response.content)
+            # 優先使用 fast_info (更快的 API)
+            try:
+                fast_info = stock.fast_info
+                if hasattr(fast_info, 'last_price') and fast_info.last_price:
+                    return float(fast_info.last_price)
+            except:
+                pass
             
-            # 使用更穩健的 XPath（Yahoo Finance 可能會改變結構）
-            price_xpath = '/html/body/div[2]/main/section/section/section/article/section[1]/div[2]/div[1]/section/div/section/div[1]/div[1]/span[1]/text()'
-            price_elements = tree.xpath(price_xpath)
-            
-            if price_elements:
-                current_price = float(price_elements[0].replace(",", ""))
-                print(f"{item}{suffix} 的當前價格: {current_price}")
-                return float(current_price)
+            # 備用方案：使用 info
+            try:
+                info = stock.info
                 
-        except requests.RequestException as e:
-            print(f"無法訪問 {url}，錯誤: {str(e)}")
+                # 檢查是否為空的 info 字典或只有錯誤資訊
+                if not info or len(info) <= 2 or 'trailingPegRatio' in info and len(info) == 1:
+                    continue
+                
+                # 按優先級嘗試不同的價格欄位
+                price_fields = ['currentPrice', 'regularMarketPrice', 'previousClose', 'bid', 'ask']
+                
+                for field in price_fields:
+                    if field in info and info[field] is not None:
+                        price = float(info[field])
+                        if price > 0:
+                            return price
+            except Exception:
+                pass
+            
+            # 最後備用方案：使用歷史數據的最新收盤價
+            try:
+                hist = stock.history(period="1d")
+                if not hist.empty and 'Close' in hist.columns:
+                    latest_price = hist['Close'].iloc[-1]
+                    if latest_price > 0:
+                        return float(latest_price)
+            except Exception:
+                pass
+                        
+        except Exception as e:
+            # 記錄特定錯誤以便調試
+            if "404" in str(e) or "Not Found" in str(e):
+                print(f"股票代碼 {symbol} 在 Yahoo Finance 上找不到")
             continue
 
-    print(f"找不到 {item} 的價格，可能不在 TW 或 TWO 市場")
     return None
+
+
+def get_prices_batch(stock_codes: List[str]) -> Dict[str, Optional[float]]:
+    """
+    批量快速獲取多個股票價格
+
+    Args:
+        stock_codes: 股票代碼列表
+
+    Returns:
+        Dict[str, Optional[float]]: {股票代碼: 價格} 的字典
+    """
+    results = {}
+    
+    for code in stock_codes:
+        results[code] = get_current_price(code)
+    
+    return results
+
+
+def get_prices_with_symbols(stock_codes: List[str]) -> Dict[str, Dict[str, Optional[float]]]:
+    """
+    批量獲取價格並返回完整符號資訊
+
+    Args:
+        stock_codes: 股票代碼列表
+
+    Returns:
+        Dict: {股票代碼: {'symbol': '完整符號', 'price': 價格}}
+    """
+    results = {}
+    market_suffixes = ['.TW', '.TWO']
+    
+    for code in stock_codes:
+        results[code] = {'symbol': None, 'price': None}
+        
+        for suffix in market_suffixes:
+            symbol = f"{code}{suffix}"
+            
+            try:
+                stock = yf.Ticker(symbol)
+                
+                # 優先使用 fast_info
+                try:
+                    fast_info = stock.fast_info
+                    if hasattr(fast_info, 'last_price') and fast_info.last_price:
+                        results[code] = {
+                            'symbol': symbol,
+                            'price': float(fast_info.last_price)
+                        }
+                        break
+                except:
+                    pass
+                
+                # 備用方案
+                info = stock.info
+                for field in ['currentPrice', 'regularMarketPrice', 'previousClose']:
+                    if field in info and info[field] is not None:
+                        price = float(info[field])
+                        if price > 0:
+                            results[code] = {
+                                'symbol': symbol,
+                                'price': price
+                            }
+                            break
+                
+                if results[code]['price'] is not None:
+                    break
+                    
+            except Exception:
+                continue
+    
+    return results
+
+
+# 測試特定問題股票的函式
+def debug_stock(item: str):
+    """
+    調試特定股票代碼的查詢問題
+    """
+    market_suffixes = ['.TW', '.TWO']
+    
+    print(f"=== 調試股票代碼: {item} ===")
+    
+    for suffix in market_suffixes:
+        symbol = f"{item}{suffix}"
+        print(f"\n嘗試符號: {symbol}")
+        
+        try:
+            stock = yf.Ticker(symbol)
+            
+            # 測試 fast_info
+            try:
+                fast_info = stock.fast_info
+                print(f"fast_info 可用: {hasattr(fast_info, 'last_price')}")
+                if hasattr(fast_info, 'last_price'):
+                    print(f"fast_info.last_price: {fast_info.last_price}")
+            except Exception as e:
+                print(f"fast_info 錯誤: {e}")
+            
+            # 測試 info
+            try:
+                info = stock.info
+                print(f"info 字典長度: {len(info)}")
+                print(f"info 鍵值: {list(info.keys())[:10]}...")  # 只顯示前10個鍵
+                
+                price_fields = ['currentPrice', 'regularMarketPrice', 'previousClose', 'bid', 'ask']
+                for field in price_fields:
+                    if field in info:
+                        print(f"{field}: {info[field]}")
+                        
+            except Exception as e:
+                print(f"info 錯誤: {e}")
+            
+            # 測試歷史數據
+            try:
+                hist = stock.history(period="1d")
+                if not hist.empty:
+                    print(f"歷史數據最新收盤價: {hist['Close'].iloc[-1]}")
+                else:
+                    print("歷史數據為空")
+            except Exception as e:
+                print(f"歷史數據錯誤: {e}")
+                
+        except Exception as e:
+            print(f"整體錯誤: {e}")
 
 class Expense:
     """Represents an expense record."""
@@ -1423,10 +1615,10 @@ class SmartMF:
 
 
     def updateStockPrice(self, user_id: str) -> bool:
-        
+
         ref = self.firestore_client.get_collection(self._get_assets_collection_path(user_id))
         assetsList = [doc.to_dict() for doc in ref if doc.to_dict()['quantity'] >= 0]
-
+        print('assetsList', assetsList)
         stockDB_List = self.get_stockDB()
         stocks_List = [stock.get('item') for stock in stockDB_List if stock.get("item") is not None]
         
@@ -1735,4 +1927,57 @@ class SmartMF:
             print(f"更新 Firestore 股票資產時發生錯誤 UID {user_id}, asset_id {asset_id}: {e}")
             return False, "更新股票資料時發生錯誤。"
 
-                
+    def set_monthly_financial_goal(self, user_id, year, month, income, savings_goal):
+        """
+        設定或更新指定月份的收入與儲蓄目標。
+        """
+        try:
+            # 使用 f-string 建立文件 ID，例如 '2025-07'
+            month_id = f"{year}-{str(month).zfill(2)}"
+            
+            # 指向特定使用者的每月目標集合
+            goal_ref = self.firestore_client.db.collection('UserDB').document(user_id).collection('monthly_goals').document(month_id)
+            
+            goal_data = {
+                'userId': user_id,
+                'year': int(year),
+                'month': int(month),
+                'monthlyIncome': float(income),
+                'savingsGoal': float(savings_goal),
+                'lastUpdated': firestore.SERVER_TIMESTAMP
+            }
+            
+            goal_ref.set(goal_data, merge=True) # 使用 merge=True 來進行更新或建立
+            
+            print(f"Successfully set financial goal for user {user_id} for month {month_id}")
+            return {"success": True, "message": "Financial goal updated successfully."}
+
+        except Exception as e:
+            print(f"Error in set_monthly_financial_goal: {e}")
+            return {"success": False, "message": str(e)}
+
+    def get_financial_summary(self, user_id, year, month):
+        """
+        獲取指定月份的財務摘要，包含收入、目標、總開銷、剩餘天數和建議每日開銷。
+        """
+        try:
+            # 1. 獲取月度目標
+            month_id = f"{year}-{str(month).zfill(2)}"
+            goal_ref = self.firestore_client.db.collection('UserDB').document(user_id).collection('monthly_goals').document(month_id)
+            goal_doc = goal_ref.get()
+            
+            if not goal_doc.exists:
+                return {
+                    "hasFinancialData": False,
+                    "message": "Monthly financial goal not set for this month."
+                }
+            
+            financial_data = goal_doc.to_dict()
+            financial_data["hasFinancialData"] = True
+            print(f"Financial goal for {user_id} in {month_id}: {financial_data}")
+            return financial_data
+
+        except Exception as e:
+            print(f"Error in get_financial_summary: {e}")
+            # 回傳一個表示錯誤的結構，讓前端可以處理
+            return {"success": False, "hasFinancialData": False, "message": str(e)}

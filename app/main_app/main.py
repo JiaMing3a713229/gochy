@@ -13,7 +13,8 @@ import base64
 import os
 from google import genai
 from google.genai import types
-
+from typing import Dict, List, Optional, Union, Any
+import yfinance as yf
 
 client = genai.Client(api_key= 'AIzaSyDqqI2-g6VQoGvQvxixEg6xNtjlhJh9h3I') # Replace 'YOUR_API_KEY' with your actual Gemini API key
 app = Flask(__name__)
@@ -24,6 +25,71 @@ CORS(app)  # 啟用 CORS，允許所有來源訪問
 wallet = SmartMF() # Removed db_name argument as it's handled in SupWallet class
 # ---> 新增 Firebase Token 驗證裝飾器 <---
 from functools import wraps
+
+def get_current_price(item: str) -> Optional[float]:
+    """
+    快速獲取股票當前價格
+
+    Args:
+        item: 股票代碼
+
+    Returns:
+        Optional[float]: 當前價格或無法獲取時返回 None
+    """
+    # 台灣市場後綴
+    market_suffixes = ['.TW', '.TWO']
+    
+    for suffix in market_suffixes:
+        symbol = f"{item}{suffix}"
+        
+        try:
+            # 創建股票對象並快速獲取資訊
+            stock = yf.Ticker(symbol)
+            
+            # 優先使用 fast_info (更快的 API)
+            try:
+                fast_info = stock.fast_info
+                if hasattr(fast_info, 'last_price') and fast_info.last_price:
+                    return float(fast_info.last_price)
+            except:
+                pass
+            
+            # 備用方案：使用 info
+            try:
+                info = stock.info
+                
+                # 檢查是否為空的 info 字典或只有錯誤資訊
+                if not info or len(info) <= 2 or 'trailingPegRatio' in info and len(info) == 1:
+                    continue
+                
+                # 按優先級嘗試不同的價格欄位
+                price_fields = ['currentPrice', 'regularMarketPrice', 'previousClose', 'bid', 'ask']
+                
+                for field in price_fields:
+                    if field in info and info[field] is not None:
+                        price = float(info[field])
+                        if price > 0:
+                            return price
+            except Exception:
+                pass
+            
+            # 最後備用方案：使用歷史數據的最新收盤價
+            try:
+                hist = stock.history(period="1d")
+                if not hist.empty and 'Close' in hist.columns:
+                    latest_price = hist['Close'].iloc[-1]
+                    if latest_price > 0:
+                        return float(latest_price)
+            except Exception:
+                pass
+                        
+        except Exception as e:
+            # 記錄特定錯誤以便調試
+            if "404" in str(e) or "Not Found" in str(e):
+                print(f"股票代碼 {symbol} 在 Yahoo Finance 上找不到")
+            continue
+
+    return None
 
 def firebase_token_required(f):
     @wraps(f)
@@ -88,51 +154,49 @@ def create_user_profile():
         return jsonify({"error": "建立 Profile 時發生伺服器錯誤"}), 500
 # <--------------------------------------------------->
 
-def get_current_price(item: str) -> int:
-    """
-    獲取股票當前價格，支持 TW 和 TWO 市場
+# def get_current_price(item: str) -> int:
+#     """
+#     獲取股票當前價格，支持 TW 和 TWO 市場
 
-    Args:
-        item: 股票代碼
+#     Args:
+#         item: 股票代碼
 
-    Returns:
-        float 或 None: 當前價格或無法獲取時返回 None
-    """
-    # 定義可能的市場後綴
-    market_suffixes = ['.TW', '.TWO']
+#     Returns:
+#         float 或 None: 當前價格或無法獲取時返回 None
+#     """
+#     # 定義可能的市場後綴
+#     market_suffixes = ['.TW', '.TWO']
 
-    # 添加 User-Agent 模擬瀏覽器
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    }
+#     # 添加 User-Agent 模擬瀏覽器
+#     headers = {
+#         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+#     }
 
-    for suffix in market_suffixes:
-        url = f"https://finance.yahoo.com/quote/{item}{suffix}"
+#     for suffix in market_suffixes:
+#         url = f"https://finance.yahoo.com/quote/{item}{suffix}"
         
-        try:
-            # 發送 HTTP 請求 
-            response = requests.get(url, headers=headers, timeout=10)
-            response.raise_for_status()  # 如果狀態碼不是 200，會拋出異常
+#         try:
+#             # 發送 HTTP 請求 
+#             response = requests.get(url, headers=headers, timeout=10)
+#             response.raise_for_status()  # 如果狀態碼不是 200，會拋出異常
             
-            # 解析 HTML
-            tree = html.fromstring(response.content)
+#             # 解析 HTML
+#             tree = html.fromstring(response.content)
             
-            # 使用更穩健的 XPath（Yahoo Finance 可能會改變結構）
-            price_xpath = '/html/body/div[2]/main/section/section/section/article/section[1]/div[2]/div[1]/section/div/section/div[1]/div[1]/span[1]/text()'
-            price_elements = tree.xpath(price_xpath)
-            
-            if price_elements:
-                current_price = float(price_elements[0].replace(",", ""))
-                print(f"{item}{suffix} 的當前價格: {current_price}")
-                return float(current_price)
+#             # 使用更穩健的 XPath（Yahoo Finance 可能會改變結構）
+#             price_xpath = '/html/body/div[2]/main/section/section/section/article/section[1]/div[2]/div[1]/section/div/section/div[1]/div[1]/span/'
+#             price_elements = tree.xpath(price_xpath)
+#             if price_elements:
+#                 current_price = float(price_elements[0].replace(",", ""))
+#                 print(f"{item}{suffix} 的當前價格: {current_price}")
+#                 return float(current_price)
                 
-        except requests.RequestException as e:
-            print(f"無法訪問 {url}，錯誤: {str(e)}")
-            continue
+#         except requests.RequestException as e:
+#             print(f"無法訪問 {url}，錯誤: {str(e)}")
+#             continue
 
-    print(f"找不到 {item} 的價格，可能不在 TW 或 TWO 市場")
-    return None
- 
+#     print(f"找不到 {item} 的價格，可能不在 TW 或 TWO 市場")
+#     return None
 
 @app.route('/')
 def list_api_endpoints():
@@ -363,12 +427,13 @@ def submit_stock_data():
     currentPrice = 0
     currentValue = 0
     data = request.json
+    print("submitStockData:", data)
     existAsset = wallet.find_asset_by_name(user_id, data["item"]) # Changed to find_asset_by_name
     if(existAsset != None):
         exist_data = existAsset["data"]
         print(exist_data['item'],"Asset existed") # Corrected key name
         exist_id = existAsset["id"]
-        currentPrice = get_current_price(data["item"])
+        currentPrice = wallet.get_current_price(data["item"])
         updateValue = {
             "id": exist_data["id"],
             'acquisition_date' : exist_data["acquisition_date"],
@@ -828,6 +893,88 @@ def handle_stock_transaction_route():
         import traceback
         traceback.print_exc()
         return jsonify({"error": "伺服器內部錯誤"}), 500
+    
+@app.route('/api/financial_summary', methods=['GET'])
+@firebase_token_required
+def get_financial_summary():
+    """
+    獲取當前使用者的月度財務摘要
+    """
+    user_id = g.uid
+    
+    # 獲取當前的年份和月份
+    today = datetime.now()
+    year = today.year
+    month = today.month
+    
+    summary = wallet.get_financial_summary(user_id, year, month)
+    
+    if summary.get("success") == False:
+        return jsonify(summary), 404
+
+    return jsonify(summary), 200
+
+
+@app.route('/api/financial_goals', methods=['POST'])
+@firebase_token_required
+def set_financial_goals():
+    """
+    設定當前使用者的月度財務目標
+    """
+    user_id = g.uid
+    
+    req_data = request.get_json()
+    if not req_data or 'monthlyIncome' not in req_data or 'savingsGoal' not in req_data:
+        return jsonify({"error": "Missing 'monthlyIncome' or 'savingsGoal' in request"}), 400
+        
+    income = req_data['monthlyIncome']
+    savings_goal = req_data['savingsGoal']
+    
+    # 獲取當前的年份和月份
+    today = datetime.now()
+    year = today.year
+    month = today.month
+    
+    result = wallet.set_monthly_financial_goal(user_id, year, month, income, savings_goal)
+    
+    if result.get("success"):
+        # 設定成功後，立即返回最新的摘要
+        summary = wallet.get_financial_summary(user_id, year, month)
+        return jsonify(summary), 201
+    else:
+        return jsonify({"error": result.get("message", "An unknown error occurred")}), 500
+    
+# ================================================
+# == 新增：刪除股票的 API 端點 ==
+# ================================================
+@app.route('/api/stock/<string:assetId>', methods=['DELETE'])
+@firebase_token_required
+def handle_delete_stock(assetId):
+    """
+    處理來自前端的刪除特定股票的請求。
+    
+    Args:
+        user_id (str): 從 verify_firebase_token 裝飾器傳入的使用者 UID。
+        assetId (str): 從 URL 路徑中獲取的asset id。
+    """
+    user_id = g.uid
+    if not user_id:
+        return jsonify({"error": "未授權的請求"}), 401
+    
+    if not assetId:
+        return jsonify({"error": "未提供股票代碼"}), 400
+
+    print(f"收到來自使用者 {user_id} 刪除股票 {assetId} 的請求")
+
+    # 呼叫我們設計的資料庫刪除函式
+    success = wallet.delete_asset(user_id, assetId)
+
+    if success:
+        # HTTP 200 OK 通常表示成功，也可以用 204 No Content
+        return jsonify({"message": f"股票 {assetId} 已成功移除"}), 200
+    else:
+        # 如果伺服器內部出錯
+        return jsonify({"error": f"移除股票 {assetId} 時發生伺服器內部錯誤"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, port=8080, host='0.0.0.0')
